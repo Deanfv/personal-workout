@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Personal Workout">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Personal Workout – Golf Strength</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2e8f0;line-height:1.4;padding:12px;max-width:480px;margin:0 auto}
+h1{font-size:1.4rem;margin:8px 0;color:#38bdf8}
+h2{font-size:1.1rem;margin:12px 0 6px;color:#94a3b8}
+button{background:#0284c7;color:#fff;border:none;padding:12px 16px;border-radius:8px;font-size:1rem;width:100%;margin:6px 0;cursor:pointer}
+button.secondary{background:#334155}
+button.danger{background:#b91c1c}
+button.selected{background:#16a34a}
+button.ready{background:#16a34a}
+.card{background:#1e293b;border-radius:10px;padding:12px;margin:8px 0}
+.ex{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #334155}
+input,select{background:#0f172a;border:1px solid #475569;color:#e2e8f0;padding:8px;border-radius:6px;width:70px;font-size:1rem}
+label{font-size:0.9rem;color:#94a3b8}
+.small{font-size:0.85rem;color:#64748b}
+.hidden{display:none}
+#screen{min-height:100vh}
+.timer{font-size:2rem;text-align:center;margin:12px 0}
+.cue{background:#0f172a;padding:8px;border-radius:6px;margin:6px 0;font-size:0.9rem}
+.how{background:#0f172a;padding:10px;border-radius:6px;margin:6px 0;font-size:0.92rem;color:#cbd5e1}
+.disclaimer{font-size:0.75rem;color:#f87171;margin:12px 0;padding:8px;border:1px solid #7f1d1d;border-radius:6px}
+.hint{font-size:0.9rem;color:#fbbf24;margin:8px 0 12px;padding:8px;background:#1e293b;border-radius:8px;border:1px solid #854d0e}
+.dots{display:flex;gap:8px;margin:8px 0 4px}
+.dot{flex:1;height:8px;border-radius:99px;background:#334155}
+.dot.on{background:#16a34a}
+a{color:#38bdf8}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="onboard" class="screen">
+    <h1>Personal Workout</h1>
+    <p class="small">Tour-level golf strength • dumbbell &amp; kettlebell</p>
+    <div class="disclaimer">Not medical advice. Consult a physician. Stop on sharp pain. Form first.</div>
+    <h2>Self-screen (required on first use)</h2>
+    <div class="dots" aria-hidden="true">
+      <div class="dot" id="dot-balance"></div>
+      <div class="dot" id="dot-overhead"></div>
+      <div class="dot" id="dot-hinge"></div>
+    </div>
+    <p class="hint" id="screenHint">Buttons start blue. Tap Yes or No on each check — it turns green. All three must be green to unlock the next screen.</p>
+    <div class="card" data-screen="balance">
+      <p>Can you stand on one leg 10s each side without support?</p>
+      <button onclick="passScreen('balance',true,this)">Yes</button>
+      <button onclick="passScreen('balance',false,this)">No / wobbly</button>
+    </div>
+    <div class="card" data-screen="overhead">
+      <p>Pain-free overhead reach both arms?</p>
+      <button onclick="passScreen('overhead',true,this)">Yes</button>
+      <button onclick="passScreen('overhead',false,this)">Limited / pain</button>
+    </div>
+    <div class="card" data-screen="hinge">
+      <p>Comfortable hip hinge (touch mid-shin with flat back)?</p>
+      <button onclick="passScreen('hinge',true,this)">Yes</button>
+      <button onclick="passScreen('hinge',false,this)">No / rounded</button>
+    </div>
+    <button id="startBtn" class="hidden ready" onclick="startApp()">Unlock &amp; Start — Personal Workout</button>
+  </div>
+
+  <div id="main" class="screen hidden">
+    <h1>Personal Workout</h1>
+    <div class="disclaimer">Stop on sharp pain. RPE 6–7 target. Deload if consecutive high RPE or any pain.</div>
+    <button onclick="startWarmup()">Start Warm-up (12 min)</button>
+    <button onclick="generateWorkout()">Generate Full-Body Session</button>
+    <button class="secondary" onclick="showHistory()">History &amp; Progress</button>
+    <button class="secondary" onclick="showSelfVideo()">Self-video (optional)</button>
+    <div id="content"></div>
+  </div>
+</div>
+
+<script>
+const EXERCISES = [
+  {id:'goblet', name:'Goblet Squat', cat:'squat',
+    how:'Hold a KB or DB vertically against your chest, elbows tucked. Feet about shoulder-width, toes slightly out. Sit the hips down and back until thighs are at least parallel, keeping the chest tall and heels down. Drive the floor away to stand. This is the tour-standard loaded squat when you only have bells.',
+    cues:'Chest up. Elbows inside knees. Drive heels. Sit back.',
+    mods:'To a box. Bodyweight first. Heels on thin plates if ankles are stiff.',
+    sets:'3x8-12', video:'https://www.youtube.com/results?search_query=goblet+squat+form'},
+  {id:'offset_squat', name:'Offset KB Front Squat', cat:'squat',
+    how:'Rack one kettlebell on one shoulder (or hold one DB at a shoulder). Stand tall, brace, and squat. The offset load tries to pull you sideways and rotate — fight it so the torso stays square. Switch sides each set. Tour players use this for anti-rotation under load, the same quality that holds posture through the downswing.',
+    cues:'Ribs down. Square hips. Don’t lean toward the bell.',
+    mods:'Goblet squat instead. Lighter offset. Shallower depth.',
+    sets:'3x6-8/side', video:'https://www.youtube.com/results?search_query=offset+kettlebell+front+squat'},
+  {id:'rdl', name:'DB/KB Romanian Deadlift', cat:'hinge',
+    how:'Stand tall holding DBs at the sides or a KB in both hands. Soften the knees and push the hips straight back, keeping a long spine and the weights close to the legs. Lower until you feel a hamstring stretch (usually mid-shin). Drive the hips forward to stand, squeezing the glutes at the top. Do not squat down or round the back.',
+    cues:'Soft knees. Hips back. Flat back. Feel hamstrings.',
+    mods:'Reduce ROM. Light touch to a bench behind you. Lighter load.',
+    sets:'3x8-10', video:'https://www.youtube.com/results?search_query=dumbbell+rdl+form'},
+  {id:'slrdl', name:'Single-Leg RDL', cat:'single',
+    how:'Stand on one leg, soft knee. Hinge at the hip and let the back leg reach long behind you as the torso tips forward, reaching the bell toward mid-shin. Keep hips square (don’t open the back hip). Return by driving the standing heel down. This is a staple for trail-leg stability and hinge control on tour.',
+    cues:'Hinge, kick back leg. Soft knee. Hips square. Light touch for balance.',
+    mods:'Hold a wall or stick. Bodyweight. Kickstand (toe down) first.',
+    sets:'3x6-8/side', video:'https://www.youtube.com/results?search_query=single+leg+rdl+form'},
+  {id:'bulgarian', name:'Bulgarian Split Squat', cat:'single',
+    how:'Rear foot on a bench or chair, front foot far enough forward that the front knee stays over the mid-foot. Drop the back knee toward the floor, torso tall, then drive through the front heel. Hold DBs at the sides or one goblet-style. Tour S&C uses this as the primary single-leg strength builder for the trail and lead legs.',
+    cues:'Front heel down. Tall torso. Control the descent. Don’t crash the back knee.',
+    mods:'Bodyweight. Hold a rail. Lower the rear-foot height. Reverse lunge instead.',
+    sets:'3x6-8/side', video:'https://www.youtube.com/results?search_query=bulgarian+split+squat+dumbbell+form'},
+  {id:'reverse_lunge', name:'Reverse Lunge', cat:'lunge',
+    how:'Stand tall with DBs at the sides. Step one foot back, drop the back knee under the hip, front shin vertical. Push the front floor away to return. Stepping back is easier on the knees than a forward lunge and trains the deceleration you need into the lead side.',
+    cues:'Step back. Front knee tracks toe. Drive up through the front heel.',
+    mods:'Hold support. Short step. Bodyweight. Split-squat in place.',
+    sets:'3x6-10/side', video:'https://www.youtube.com/results?search_query=reverse+lunge+dumbbell'},
+  {id:'lateral_lunge', name:'Lateral Lunge', cat:'lunge',
+    how:'Stand tall, step wide to one side, sit the hip back over that heel while the other leg stays long. Push the loaded foot to return to center. Keep the chest up and the planted heel down. Golf is a frontal-plane sport — this trains the trail-leg push and lead-leg accept that a sagittal squat misses.',
+    cues:'Sit back over the heel. Other leg long. Chest up. Push the floor to return.',
+    mods:'Bodyweight. Shorter step. Hold a support. Toe-out the working foot.',
+    sets:'3x6-8/side', video:'https://www.youtube.com/results?search_query=lateral+lunge+dumbbell+form'},
+  {id:'stepup', name:'Step-Up', cat:'single',
+    how:'Place the whole foot on a box about mid-shin to knee height. Drive through that heel to stand up without pushing off the trailing toe. Control the lower. Hold DBs at the sides. Builds lead-leg strength for the post-up through impact.',
+    cues:'Full foot on the step. Drive through the heel. Control down. No trail-leg hop.',
+    mods:'Lower step. Hold a rail. Bodyweight.',
+    sets:'3x6-8/side', video:'https://www.youtube.com/results?search_query=step+up+dumbbell+exercise+form'},
+  {id:'suitcase', name:'Suitcase Carry', cat:'carry',
+    how:'Hold one KB or DB at your side like a suitcase. Pack the shoulder, stand tall, and walk. Do not lean away from or into the weight — ribs stacked over pelvis. Tour players use this as anti-lateral-flexion work, the same brace that keeps posture in transition.',
+    cues:'Tall posture. Core braced. Walk controlled. Don’t lean.',
+    mods:'Shorter distance. Lighter. March in place.',
+    sets:'3x20-40m/side', video:'https://www.youtube.com/results?search_query=suitcase+carry+kettlebell'},
+  {id:'farmer', name:'Farmer Carry', cat:'carry',
+    how:'Heavy DB or KB in each hand. Stand tall, shoulders packed, grip hard, and walk with even, quiet steps. This is the simplest high-value loaded carry for grip, posture, and work capacity — all of which show up late on Sunday.',
+    cues:'Shoulders packed. Even steps. Grip hard. Eyes level.',
+    mods:'Shorter walk. Lighter. Suitcase if one side is cranky.',
+    sets:'3x30-50m', video:'https://www.youtube.com/results?search_query=farmer+carry+form'},
+  {id:'rack_carry', name:'KB Rack Carry', cat:'carry',
+    how:'Clean one or two KBs into the front rack (bells resting on the forearms, fists under the chin). Walk tall without letting the ribs flare. The rack position trains the anterior core and posture you need to stay in flexion/extension balance through the swing.',
+    cues:'Ribs down. Elbows in. Tall walk. Don’t let the bells pull you forward.',
+    mods:'Single-arm rack. Lighter. Farmer carry instead.',
+    sets:'3x20-40m', video:'https://www.youtube.com/results?search_query=kettlebell+rack+carry'},
+  {id:'row', name:'Single-Arm DB Row', cat:'pull',
+    how:'Hinge and support one hand on a bench. Let the working arm hang, then pull the elbow to the hip and squeeze the shoulder blade back and down. Lower under control. Neutral spine. Posterior-chain pulling keeps the trail-side scapula honest and protects the lead shoulder.',
+    cues:'Hinge support. Pull elbow to hip. Squeeze back. Don’t shrug.',
+    mods:'Seated. Chest-supported on an incline. Lighter.',
+    sets:'3x8-12/side', video:'https://www.youtube.com/results?search_query=single+arm+dumbbell+row'},
+  {id:'floorpress', name:'DB Floor Press', cat:'push',
+    how:'Lie on the floor, DBs over the chest, neutral grip. Lower until the upper arms lightly touch the floor (this naturally limits shoulder extension), then press. Elbows about 45° from the body. A tour-friendly press when you have no bench — trains lockout without stressing the anterior shoulder.',
+    cues:'Elbows 45°. Drive up. Controlled lower. Wrists stacked.',
+    mods:'Partial ROM. One arm at a time. Neutral grip only.',
+    sets:'3x8-12', video:'https://www.youtube.com/results?search_query=dumbbell+floor+press'},
+  {id:'hkpress', name:'Half-Kneeling Press', cat:'push',
+    how:'Kneel with the same-side knee down as the working arm (or opposite if that feels more stable). Glute the down-side, ribs stacked. Press the DB or KB vertical without leaning or flaring the ribs. Lower slowly. This is the tour press: shoulder strength plus anti-extension and hip stability.',
+    cues:'Knee down. Glute tight. Press vertical. No lean. Ribs down.',
+    mods:'Seated. Light. Half-kneeling hold at the top.',
+    sets:'3x6-10/side', video:'https://www.youtube.com/results?search_query=half+kneeling+dumbbell+press'},
+  {id:'chop', name:'Half-Kneeling Chop (DB)', cat:'rotate',
+    how:'Half-kneel, hold a DB with both hands. Start high over the up-knee shoulder and chop diagonally across the body to the down-knee hip. Rotate through the torso, not by collapsing the posture. Slow and braced. This is the high-to-low rotary pattern used all over tour S&C (usually cable; DB works on the road).',
+    cues:'High to low across the body. Core resists. Slow. Tall spine.',
+    mods:'Standing. Shorter arc. Lighter. Band if you have one.',
+    sets:'3x8/side', video:'https://www.youtube.com/results?search_query=half+kneeling+chop+exercise'},
+  {id:'lift', name:'Half-Kneeling Lift (DB)', cat:'rotate',
+    how:'The opposite of the chop. Half-kneel, start the DB at the down-knee hip and lift diagonally to the up-knee shoulder. Drive the rotation from the trunk while the hips stay quiet. Tour programs pair chop + lift so you train both directions of rotary power, not just the downswing pattern.',
+    cues:'Low to high. Hips quiet. Finish tall. Don’t yank with the arms.',
+    mods:'Standing. Lighter. Shorter arc.',
+    sets:'3x8/side', video:'https://www.youtube.com/results?search_query=half+kneeling+lift+exercise'},
+  {id:'pallof', name:'Pallof Press (DB/KB)', cat:'core',
+    how:'Stand or half-kneel, hold a DB or KB at the sternum, slightly offset to one side (or press it straight out and hold). The load wants to rotate you — brace and keep the ribcage and pelvis square. Press the weight out to arm’s length, pause 2–3s, return. This is the anti-rotation core drill almost every tour trainer programs.',
+    cues:'Square hips and ribs. Press out. Don’t let it twist you. Breathe.',
+    mods:'Hold at the chest only. Half-kneeling. Lighter. Shorter pause.',
+    sets:'3x8/side', video:'https://www.youtube.com/results?search_query=pallof+press+dumbbell'},
+  {id:'deadbug', name:'Dead Bug (loaded light)', cat:'core',
+    how:'Lie on your back, knees over hips, a light KB or DB held above the chest (or pressed into the floor with the free hand). Flatten the low back into the floor and keep it there. Slowly reach one arm and the opposite leg toward the floor, then return. If the back arches, shorten the reach. Anti-extension core — the brace that stops you from leaking power.',
+    cues:'Spine pressed. Opposite arm/leg. Slow. No rib flare.',
+    mods:'Bodyweight. Heel taps only. Shorter lever.',
+    sets:'3x6-8/side', video:'https://www.youtube.com/results?search_query=dead+bug+exercise'},
+  {id:'hipthrust', name:'KB Hip Thrust', cat:'hinge',
+    how:'Upper back on a bench or sturdy couch, KB on the hips (pad if needed). Feet under knees. Drive through the heels and squeeze the glutes until the hips are fully open and the shin is vertical. Lower under control. Do not over-arch the low back. Glute max power is a primary driver of hip speed on tour.',
+    cues:'Drive heels. Squeeze glutes at the top. Ribs down. No low-back arch.',
+    mods:'Floor glute bridge. Bodyweight. Pause at the top. Single-leg if ready.',
+    sets:'3x8-12', video:'https://www.youtube.com/results?search_query=kettlebell+hip+thrust+form'},
+  {id:'swing', name:'Russian KB Swing', cat:'hinge',
+    how:'Hike the bell back through the legs (like snapping a football), then explosively stand and snap the hips so the bell floats to chest height — not overhead. Arms stay loose; the hips do the work. The bell should feel weightless at the top. This is the best DB/KB hip-power drill that transfers to clubhead speed.',
+    cues:'Hinge hard. Snap hips. Arms loose. Chest height only.',
+    mods:'Light. Hinge practice first. Locked if balance or overhead screen fails.',
+    sets:'3x10-15', video:'https://www.youtube.com/results?search_query=russian+kettlebell+swing+form'},
+  {id:'halo', name:'KB Halo', cat:'mobility',
+    how:'Hold the KB by the horns at chin height. Circle it slowly around the head, keeping the head still and the ribs down. Reverse direction. Soft elbows. This opens thoracic rotation and the shoulders — the mobility tour players chase so the arms can stay connected without the low back compensating.',
+    cues:'Circle slow around the head. Core tight. Elbows soft. Head still.',
+    mods:'Smaller circle. Lighter. DB held at the ends.',
+    sets:'3x6-8/dir', video:'https://www.youtube.com/results?search_query=kettlebell+halo'},
+  {id:'tgu_half', name:'Half Turkish Get-Up', cat:'full',
+    how:'Lie on your back, KB pressed in one hand, same-side knee bent. Roll onto the opposite elbow, then to the hand, then to a tall sit, eyes on the bell the whole time. Reverse slowly. Stop at the tall sit (half get-up). Tour trainers use this for shoulder packing, anti-rotation, and slow control — not for max load.',
+    cues:'Elbow to hand to tall sit. Slow. Eyes on the bell. Packed shoulder.',
+    mods:'Bodyweight. To the elbow only. Very light.',
+    sets:'2-3x3-5/side', video:'https://www.youtube.com/results?search_query=half+turkish+get+up'},
+  {id:'windmill', name:'KB Windmill (light)', cat:'mobility',
+    how:'Press or hold a light KB overhead. Turn the feet about 45° away from the bell, soft knee on the same side as the free hand. Push the hip under the bell and slide the free hand down the leg, eyes on the bell. Stand by driving the hip back under. Advanced T-spine and hip mobility — keep it light.',
+    cues:'Soft knee. Hip under the bell. Look at the bell. Slow.',
+    mods:'Bodyweight. Reduced ROM. Locked if overhead screen is limited.',
+    sets:'2-3x5-6/side', video:'https://www.youtube.com/results?search_query=kettlebell+windmill+form'}
+];
+
+let screen = {balance:null, overhead:null, hinge:null};
+let history = JSON.parse(localStorage.getItem('pw_history') || localStorage.getItem('silo_history') || '[]');
+let currentWorkout = [];
+let timerIv = null;
+
+function passScreen(key, val, btn){
+  screen[key] = val;
+  const card = btn.closest('.card');
+  card.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  const dot = document.getElementById('dot-' + key);
+  if(dot) dot.classList.add('on');
+  const n = ['balance','overhead','hinge'].filter(k => screen[k] !== null).length;
+  const hint = document.getElementById('screenHint');
+  const startBtn = document.getElementById('startBtn');
+  if(n < 3){
+    hint.textContent = n + ' of 3 green. Tap the remaining check' + (n===2?'':'s') + ' — selected answers turn green.';
+    startBtn.classList.add('hidden');
+  } else {
+    hint.textContent = 'All three are green. Unlock & Start is ready.';
+    startBtn.classList.remove('hidden');
+  }
+}
+
+function startApp(){
+  localStorage.setItem('pw_screen', JSON.stringify(screen));
+  document.getElementById('onboard').classList.add('hidden');
+  document.getElementById('main').classList.remove('hidden');
+}
+
+function startWarmup(){
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    <h2>Warm-up 12 min</h2>
+    <div class="card">
+      <p><b>0–4 min:</b> March in place / light walk + arm circles</p>
+      <p><b>4–8 min:</b> World's Greatest Stretch 5/side • Open books 8/side • 90/90 hip switches 6/side</p>
+      <p><b>8–12 min:</b> Hip CARs 5/side • Thoracic rotations 8/side • Glute bridges 10 • Shoulder circles</p>
+    </div>
+    <div class="timer" id="wtimer">12:00</div>
+    <button onclick="runTimer(12*60,'wtimer')">Start Timer</button>
+    <p class="small">Dynamic only. No long static holds.</p>
+  `;
+}
+
+function runTimer(secs, id){
+  if(timerIv) clearInterval(timerIv);
+  let t = secs;
+  const el = document.getElementById(id);
+  timerIv = setInterval(()=>{
+    t--;
+    const m = Math.floor(t/60); const s = t%60;
+    el.textContent = m + ':' + s.toString().padStart(2,'0');
+    if(t<=0){ clearInterval(timerIv); timerIv=null; el.textContent='Done'; }
+  },1000);
+}
+
+function generateWorkout(){
+  const locked = [];
+  if(!screen.balance) locked.push('slrdl','stepup','swing','bulgarian','lateral_lunge');
+  if(!screen.overhead) locked.push('hkpress','windmill','tgu_half','swing');
+  if(!screen.hinge) locked.push('rdl','slrdl','swing','windmill');
+
+  const pool = EXERCISES.filter(e => !locked.includes(e.id));
+  const byCat = {};
+  pool.forEach(e => { if(!byCat[e.cat]) byCat[e.cat]=[]; byCat[e.cat].push(e); });
+
+  const selected = [];
+  ['squat','hinge','push','pull','carry','single'].forEach(c => {
+    if(byCat[c] && byCat[c].length) selected.push(byCat[c][Math.floor(Math.random()*byCat[c].length)]);
+  });
+  const extras = pool.filter(e => !selected.includes(e));
+  while(selected.length < 8 && extras.length){
+    const i = Math.floor(Math.random()*extras.length);
+    selected.push(extras.splice(i,1)[0]);
+  }
+  currentWorkout = selected;
+  renderWorkout();
+}
+
+function renderWorkout(){
+  const c = document.getElementById('content');
+  let html = `<h2>Session (~50 min)</h2><p class="small">3 sets typical. Rest 60–90s. Read the how-to, then use cues. Demo search opens YouTube.</p>`;
+  currentWorkout.forEach((ex,i) => {
+    const last = history.filter(h => h.id===ex.id).slice(-1)[0];
+    const sug = last && last.rpe<=6 && !last.pain ? (parseFloat(last.weight)||0)+2.5 : (last?last.weight:'');
+    html += `
+      <div class="card" id="ex${i}">
+        <b>${ex.name}</b> <span class="small">${ex.sets}</span>
+        <div class="how"><b>How to do it</b><br>${ex.how}</div>
+        <div class="cue"><b>Cues</b> — ${ex.cues}</div>
+        <div class="small">Mods: ${ex.mods}</div>
+        <a class="small" href="${ex.video}" target="_blank" rel="noopener">Demo search (YouTube)</a>
+        <div style="margin-top:8px">
+          <label>Wt <input type="number" id="w${i}" value="${sug||''}" step="0.5"></label>
+          <label>Reps <input type="number" id="r${i}" value="${last?last.reps:''}"></label>
+          <label>RPE <input type="number" id="p${i}" min="1" max="10" value="${last?last.rpe:''}"></label>
+          <label>Pain? <select id="pain${i}"><option value="0">No</option><option value="1">Yes</option></select></label>
+        </div>
+      </div>`;
+  });
+  html += `<button onclick="saveSession()">Save Session (progressive)</button>`;
+  c.innerHTML = html;
+}
+
+function saveSession(){
+  const date = new Date().toISOString().slice(0,10);
+  currentWorkout.forEach((ex,i) => {
+    const w = document.getElementById('w'+i).value;
+    const r = document.getElementById('r'+i).value;
+    const p = document.getElementById('p'+i).value;
+    const pain = document.getElementById('pain'+i).value==='1';
+    if(w||r){
+      history.push({date, id:ex.id, name:ex.name, weight:w, reps:r, rpe:p, pain});
+    }
+  });
+  const recent = history.slice(-12);
+  const high = recent.filter(h => h.rpe>=8 || h.pain).length;
+  localStorage.setItem('pw_history', JSON.stringify(history));
+  let msg = 'Saved. Next: add load only if RPE≤6 & no pain.';
+  if(high>=3) msg += ' Suggestion: deload 20% next session.';
+  alert(msg);
+  document.getElementById('content').innerHTML = '<p>Session logged.</p>';
+}
+
+function showHistory(){
+  const c = document.getElementById('content');
+  if(!history.length){ c.innerHTML='<p>No history yet.</p>'; return; }
+  let html = '<h2>History</h2>';
+  history.slice(-20).reverse().forEach(h => {
+    html += `<div class="ex"><span>${h.date} ${h.name}</span><span>${h.weight}x${h.reps} RPE${h.rpe}${h.pain?' PAIN':''}</span></div>`;
+  });
+  c.innerHTML = html;
+}
+
+function showSelfVideo(){
+  document.getElementById('content').innerHTML = `
+    <h2>Self-video (optional archive)</h2>
+    <p class="small">Record yourself. Review later vs the how-to and cues. Not scored. Phone angle is limited for multi-plane moves.</p>
+    <video id="preview" width="100%" autoplay muted playsinline style="border-radius:8px;background:#000"></video>
+    <button onclick="startCam()">Start Camera</button>
+    <button class="secondary" onclick="stopCam()">Stop</button>
+    <p class="small">Private. No upload. A mirror is better for real-time.</p>
+  `;
+}
+
+let stream = null;
+async function startCam(){
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+    document.getElementById('preview').srcObject = stream;
+  }catch(e){ alert('Camera denied or unavailable'); }
+}
+function stopCam(){
+  if(stream){ stream.getTracks().forEach(t => t.stop()); stream=null; }
+  const v = document.getElementById('preview');
+  if(v) v.srcObject = null;
+}
+
+const saved = localStorage.getItem('pw_screen') || localStorage.getItem('silo_screen');
+if(saved){
+  screen = JSON.parse(saved);
+  startApp();
+}
+</script>
+</body>
+</html>
