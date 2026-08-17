@@ -228,19 +228,55 @@ function startApp(){
   document.getElementById('main').classList.remove('hidden');
 }
 
+const WARMUP = [
+  {block:'0–4 min — raise temperature', name:'March in place / light walk', reps:'continuous',
+    how:'Easy pace. Stand tall, swing the opposite arm and leg, and let the heel kiss the ground each step. You should feel warmer, not winded. If you have space, walk the room. This is just to get blood moving before you load the joints.',
+    video:'https://www.youtube.com/results?search_query=march+in+place+warmup'},
+  {block:'0–4 min — raise temperature', name:'Arm Circles', reps:'10 each way',
+    how:'Arms long at shoulder height. Draw smooth circles, small then a little bigger. Reverse. Keep the ribs down so you are not arching the low back. Stops at any sharp shoulder pinch — shrink the circle.',
+    video:'https://www.youtube.com/results?search_query=arm+circles+warmup+form'},
+  {block:'4–8 min — hips, T-spine, ankles', name:"World's Greatest Stretch", reps:'5/side',
+    how:'Step into a long lunge, both hands inside the front foot. Drop the back knee toward the floor. Keep the front heel down. Rotate the same-side arm to the sky and follow it with your eyes, then return the hand to the floor. That one pattern opens the hip flexor, thoracic spine, and ankle — the three joints golfers lose first.',
+    video:'https://www.youtube.com/results?search_query=worlds+greatest+stretch+form'},
+  {block:'4–8 min — hips, T-spine, ankles', name:'Open Books', reps:'8/side',
+    how:'Lie on your side, knees stacked at 90°, arms straight in front of you. Keep the knees pinned. Reach the top arm up and over like you are opening a book, rotating the chest to the ceiling. Pause when the shoulder blade is on the floor (or as far as is easy), then close. If the knees lift, you went too far. This is the go-to T-spine drill on tour.',
+    video:'https://www.youtube.com/results?search_query=open+book+stretch+thoracic'},
+  {block:'4–8 min — hips, T-spine, ankles', name:'90/90 Hip Switches', reps:'6/side',
+    how:'Sit with both knees bent 90° — front shin across, back shin to the side. Tall chest. Without using your hands if you can, rotate both knees to the other side so you land in 90/90 the other way. Move slow. If the hips are sticky, use a hand on the floor. This trains internal and external hip rotation, the motion you need in the backswing and downswing.',
+    video:'https://www.youtube.com/results?search_query=90+90+hip+switch+exercise'},
+  {block:'8–12 min — control the new range', name:'Hip CARs', reps:'5/side',
+    how:'Stand and hold a wall or club. Lift one knee to 90°. Draw the biggest slow circle you can: knee out, heel back, then around without the pelvis tipping or the standing hip hiking. Reverse. CARs means controlled articular rotations — you own the range, you do not bounce into it.',
+    video:'https://www.youtube.com/results?search_query=hip+CARS+exercise+form'},
+  {block:'8–12 min — control the new range', name:'Thoracic Rotations', reps:'8/side',
+    how:'Half-kneel or sit tall. Cross the arms on the chest or hold a club across the shoulders. Rotate the ribcage over a quiet pelvis — hips stay square, chest turns. Exhale as you rotate. Stop when the hips want to come with you. This is the separation you use to load the backswing without swaying.',
+    video:'https://www.youtube.com/results?search_query=half+kneeling+thoracic+rotation+golf'},
+  {block:'8–12 min — control the new range', name:'Glute Bridges', reps:'10',
+    how:'Lie on your back, feet under the knees, arms by your sides. Drive through the heels and squeeze the glutes until the hips are open and the shin is vertical. Lower under control. Do not push from the low back. Wakes up the hips before you hinge or swing.',
+    video:'https://www.youtube.com/results?search_query=glute+bridge+exercise+form'},
+  {block:'8–12 min — control the new range', name:'Shoulder Circles', reps:'8 each way',
+    how:'Smaller than the arm circles. Roll the shoulders back, up, and around, then reverse. Think shoulder blades sliding on the ribcage, not shrugging into the ears. Finish feeling packed and tall.',
+    video:'https://www.youtube.com/results?search_query=shoulder+circles+warmup+form'}
+];
+
 function startWarmup(){
   const c = document.getElementById('content');
-  c.innerHTML = `
-    <h2>Warm-up 12 min</h2>
-    <div class="card">
-      <p><b>0–4 min:</b> March in place / light walk + arm circles</p>
-      <p><b>4–8 min:</b> World's Greatest Stretch 5/side • Open books 8/side • 90/90 hip switches 6/side</p>
-      <p><b>8–12 min:</b> Hip CARs 5/side • Thoracic rotations 8/side • Glute bridges 10 • Shoulder circles</p>
-    </div>
-    <div class="timer" id="wtimer">12:00</div>
-    <button onclick="runTimer(12*60,'wtimer')">Start Timer</button>
-    <p class="small">Dynamic only. No long static holds.</p>
-  `;
+  let html = `<h2>Warm-up 12 min</h2><p class="small">Dynamic only. No long static holds. Read the how-to, then use Demo search for YouTube.</p>`;
+  let last = '';
+  WARMUP.forEach(w => {
+    if(w.block !== last){
+      html += `<h2>${w.block}</h2>`;
+      last = w.block;
+    }
+    html += `
+      <div class="card">
+        <b>${w.name}</b> <span class="small">${w.reps}</span>
+        <div class="how"><b>How to do it</b><br>${w.how}</div>
+        <a class="small" href="${w.video}" target="_blank" rel="noopener">Demo search (YouTube)</a>
+      </div>`;
+  });
+  html += `<div class="timer" id="wtimer">12:00</div>
+    <button onclick="runTimer(12*60,'wtimer')">Start Timer</button>`;
+  c.innerHTML = html;
 }
 
 function runTimer(secs, id){
