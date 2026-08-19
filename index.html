@@ -27,6 +27,9 @@ label{font-size:0.9rem;color:#94a3b8}
 .hidden{display:none}
 #screen{min-height:100vh}
 .timer{font-size:2rem;text-align:center;margin:12px 0}
+.wok-clock{position:sticky;top:0;z-index:5;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px;margin:8px 0 12px;text-align:center}
+.wok-clock .t{font-size:1.8rem;font-variant-numeric:tabular-nums;color:#38bdf8}
+.wok-clock .l{font-size:0.8rem;color:#94a3b8}
 .cue{background:#0f172a;padding:8px;border-radius:6px;margin:6px 0;font-size:0.9rem}
 .how{background:#0f172a;padding:10px;border-radius:6px;margin:6px 0;font-size:0.92rem;color:#cbd5e1}
 .disclaimer{font-size:0.75rem;color:#f87171;margin:12px 0;padding:8px;border:1px solid #7f1d1d;border-radius:6px}
@@ -203,6 +206,9 @@ let screen = {balance:null, overhead:null, hinge:null};
 let history = JSON.parse(localStorage.getItem('pw_history') || localStorage.getItem('silo_history') || '[]');
 let currentWorkout = [];
 let timerIv = null;
+let workoutStart = null;
+let workoutIv = null;
+let lastWorkoutSecs = null;
 
 function passScreen(key, val, btn){
   screen[key] = val;
@@ -352,12 +358,46 @@ function generateWorkout(){
     selected.push(extras.splice(i,1)[0]);
   }
   currentWorkout = selected;
+  startWorkoutClock();
   renderWorkout();
+}
+
+function startWorkoutClock(){
+  if(workoutIv) clearInterval(workoutIv);
+  workoutStart = Date.now();
+  lastWorkoutSecs = null;
+  workoutIv = setInterval(updateWorkoutClock, 1000);
+  updateWorkoutClock();
+}
+
+function updateWorkoutClock(){
+  const el = document.getElementById('wokclock');
+  if(!el || !workoutStart) return;
+  el.textContent = fmtTime(Math.floor((Date.now() - workoutStart) / 1000));
+}
+
+function stopWorkoutClock(){
+  if(workoutIv){ clearInterval(workoutIv); workoutIv = null; }
+  if(!workoutStart) return lastWorkoutSecs || 0;
+  lastWorkoutSecs = Math.floor((Date.now() - workoutStart) / 1000);
+  workoutStart = null;
+  return lastWorkoutSecs;
+}
+
+function fmtDuration(secs){
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  if(m === 0) return s + ' sec';
+  if(s === 0) return m + ' min';
+  return m + ' min ' + s + ' sec';
 }
 
 function renderWorkout(){
   const c = document.getElementById('content');
-  let html = `<h2>Session (~50 min)</h2><p class="small">3 sets typical. Rest 60–90s. Read the how-to, then use cues. Demo search opens YouTube.</p>`;
+  const live = workoutStart ? fmtTime(Math.floor((Date.now() - workoutStart) / 1000)) : '0:00';
+  let html = `<div class="wok-clock"><div class="l">Session clock</div><div class="t" id="wokclock">${live}</div></div>
+    <h2>Full-body session</h2>
+    <p class="small">Clock started when you generated this session. Save Session stops it and stores the time. 3 sets typical. Rest 60–90s.</p>`;
   currentWorkout.forEach((ex,i) => {
     const last = history.filter(h => h.id===ex.id).slice(-1)[0];
     const sug = last && last.rpe<=6 && !last.pain ? (parseFloat(last.weight)||0)+2.5 : (last?last.weight:'');
@@ -382,22 +422,25 @@ function renderWorkout(){
 
 function saveSession(){
   const date = new Date().toISOString().slice(0,10);
+  const secs = stopWorkoutClock();
+  const dur = fmtDuration(secs);
   currentWorkout.forEach((ex,i) => {
     const w = document.getElementById('w'+i).value;
     const r = document.getElementById('r'+i).value;
     const p = document.getElementById('p'+i).value;
     const pain = document.getElementById('pain'+i).value==='1';
     if(w||r){
-      history.push({date, id:ex.id, name:ex.name, weight:w, reps:r, rpe:p, pain});
+      history.push({date, id:ex.id, name:ex.name, weight:w, reps:r, rpe:p, pain, duration:secs});
     }
   });
-  const recent = history.slice(-12);
+  history.push({date, id:'_session', name:'Full-body session', duration:secs, elapsed:dur});
+  const recent = history.filter(h => h.id !== '_session').slice(-12);
   const high = recent.filter(h => h.rpe>=8 || h.pain).length;
   localStorage.setItem('pw_history', JSON.stringify(history));
-  let msg = 'Saved. Next: add load only if RPE≤6 & no pain.';
+  let msg = 'Saved. This workout took ' + dur + '. Next: add load only if RPE≤6 & no pain.';
   if(high>=3) msg += ' Suggestion: deload 20% next session.';
   alert(msg);
-  document.getElementById('content').innerHTML = '<p>Session logged.</p>';
+  document.getElementById('content').innerHTML = '<div class="card"><h2>Session logged</h2><p>This workout took <b>' + dur + '</b>.</p></div>';
 }
 
 function showHistory(){
@@ -405,7 +448,11 @@ function showHistory(){
   if(!history.length){ c.innerHTML='<p>No history yet.</p>'; return; }
   let html = '<h2>History</h2>';
   history.slice(-20).reverse().forEach(h => {
-    html += `<div class="ex"><span>${h.date} ${h.name}</span><span>${h.weight}x${h.reps} RPE${h.rpe}${h.pain?' PAIN':''}</span></div>`;
+    if(h.id === '_session'){
+      html += `<div class="ex"><span>${h.date} ${h.name}</span><span>${h.elapsed || fmtDuration(h.duration||0)}</span></div>`;
+    } else {
+      html += `<div class="ex"><span>${h.date} ${h.name}</span><span>${h.weight}x${h.reps} RPE${h.rpe}${h.pain?' PAIN':''}</span></div>`;
+    }
   });
   c.innerHTML = html;
 }
