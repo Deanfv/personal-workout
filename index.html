@@ -71,7 +71,8 @@ a{color:#38bdf8}
   <div id="main" class="screen hidden">
     <h1>Personal Workout</h1>
     <div class="disclaimer">Stop on sharp pain. Rate of Perceived Exertion (RPE) 6–7 target. Deload if consecutive high RPE or any pain.</div>
-    <button onclick="startWarmup()">Start Warm-up (12 min)</button>
+    <button onclick="startWarmup()">Pre-round stretch (12 min)</button>
+    <p class="small">Same golf-muscle routine as a workout warm-up. Stretch only — it stops when the last step is done. It will not start lifts.</p>
     <button onclick="generateWorkout()">Generate Full-Body Session</button>
     <button class="secondary" onclick="showHistory()">History &amp; Progress</button>
     <button class="secondary" onclick="showSelfVideo()">Self-video (optional)</button>
@@ -229,65 +230,105 @@ function startApp(){
 }
 
 const WARMUP = [
-  {block:'0–4 min — raise temperature', name:'March in place / light walk', reps:'continuous',
+  {block:'0–4 min — raise temperature', name:'March in place / light walk', reps:'continuous', secs:180,
     how:'Easy pace. Stand tall, swing the opposite arm and leg, and let the heel kiss the ground each step. You should feel warmer, not winded. If you have space, walk the room. This is just to get blood moving before you load the joints.',
     video:'https://www.youtube.com/results?search_query=march+in+place+warmup'},
-  {block:'0–4 min — raise temperature', name:'Arm Circles', reps:'10 each way',
+  {block:'0–4 min — raise temperature', name:'Arm Circles', reps:'10 each way', secs:60,
     how:'Arms long at shoulder height. Draw smooth circles, small then a little bigger. Reverse. Keep the ribs down so you are not arching the low back. Stops at any sharp shoulder pinch — shrink the circle.',
     video:'https://www.youtube.com/results?search_query=arm+circles+warmup+form'},
-  {block:'4–8 min — hips, T-spine, ankles', name:"World's Greatest Stretch", reps:'5/side',
+  {block:'4–8 min — hips, T-spine, ankles', name:"World's Greatest Stretch", reps:'5/side', secs:90,
     how:'Step into a long lunge, both hands inside the front foot. Drop the back knee toward the floor. Keep the front heel down. Rotate the same-side arm to the sky and follow it with your eyes, then return the hand to the floor. That one pattern opens the hip flexor, thoracic spine, and ankle — the three joints golfers lose first.',
     video:'https://www.youtube.com/results?search_query=worlds+greatest+stretch+form'},
-  {block:'4–8 min — hips, T-spine, ankles', name:'Open Books', reps:'8/side',
+  {block:'4–8 min — hips, T-spine, ankles', name:'Open Books', reps:'8/side', secs:90,
     how:'Lie on your side, knees stacked at 90°, arms straight in front of you. Keep the knees pinned. Reach the top arm up and over like you are opening a book, rotating the chest to the ceiling. Pause when the shoulder blade is on the floor (or as far as is easy), then close. If the knees lift, you went too far. This is the go-to T-spine drill on tour.',
     video:'https://www.youtube.com/results?search_query=open+book+stretch+thoracic'},
-  {block:'4–8 min — hips, T-spine, ankles', name:'90/90 Hip Switches', reps:'6/side',
+  {block:'4–8 min — hips, T-spine, ankles', name:'90/90 Hip Switches', reps:'6/side', secs:60,
     how:'Sit with both knees bent 90° — front shin across, back shin to the side. Tall chest. Without using your hands if you can, rotate both knees to the other side so you land in 90/90 the other way. Move slow. If the hips are sticky, use a hand on the floor. This trains internal and external hip rotation, the motion you need in the backswing and downswing.',
     video:'https://www.youtube.com/results?search_query=90+90+hip+switch+exercise'},
-  {block:'8–12 min — control the new range', name:'Hip CARs', reps:'5/side',
+  {block:'8–12 min — control the new range', name:'Hip CARs', reps:'5/side', secs:90,
     how:'Stand and hold a wall or club. Lift one knee to 90°. Draw the biggest slow circle you can: knee out, heel back, then around without the pelvis tipping or the standing hip hiking. Reverse. CARs means controlled articular rotations — you own the range, you do not bounce into it.',
     video:'https://www.youtube.com/results?search_query=hip+CARS+exercise+form'},
-  {block:'8–12 min — control the new range', name:'Thoracic Rotations', reps:'8/side',
+  {block:'8–12 min — control the new range', name:'Thoracic Rotations', reps:'8/side', secs:60,
     how:'Half-kneel or sit tall. Cross the arms on the chest or hold a club across the shoulders. Rotate the ribcage over a quiet pelvis — hips stay square, chest turns. Exhale as you rotate. Stop when the hips want to come with you. This is the separation you use to load the backswing without swaying.',
     video:'https://www.youtube.com/results?search_query=half+kneeling+thoracic+rotation+golf'},
-  {block:'8–12 min — control the new range', name:'Glute Bridges', reps:'10',
+  {block:'8–12 min — control the new range', name:'Glute Bridges', reps:'10', secs:60,
     how:'Lie on your back, feet under the knees, arms by your sides. Drive through the heels and squeeze the glutes until the hips are open and the shin is vertical. Lower under control. Do not push from the low back. Wakes up the hips before you hinge or swing.',
     video:'https://www.youtube.com/results?search_query=glute+bridge+exercise+form'},
-  {block:'8–12 min — control the new range', name:'Shoulder Circles', reps:'8 each way',
+  {block:'8–12 min — control the new range', name:'Shoulder Circles', reps:'8 each way', secs:30,
     how:'Smaller than the arm circles. Roll the shoulders back, up, and around, then reverse. Think shoulder blades sliding on the ribcage, not shrugging into the ears. Finish feeling packed and tall.',
     video:'https://www.youtube.com/results?search_query=shoulder+circles+warmup+form'}
 ];
 
-function startWarmup(){
-  const c = document.getElementById('content');
-  let html = `<h2>Warm-up 12 min</h2><p class="small">Dynamic only. No long static holds. Read the how-to, then use Demo search for YouTube.</p>`;
-  let last = '';
-  WARMUP.forEach(w => {
-    if(w.block !== last){
-      html += `<h2>${w.block}</h2>`;
-      last = w.block;
-    }
-    html += `
-      <div class="card">
-        <b>${w.name}</b> <span class="small">${w.reps}</span>
-        <div class="how"><b>How to do it</b><br>${w.how}</div>
-        <a class="small" href="${w.video}" target="_blank" rel="noopener">Demo search (YouTube)</a>
-      </div>`;
-  });
-  html += `<div class="timer" id="wtimer">12:00</div>
-    <button onclick="runTimer(12*60,'wtimer')">Start Timer</button>`;
-  c.innerHTML = html;
+let warmupIndex = 0;
+
+function fmtTime(secs){
+  const m = Math.floor(secs/60); const s = secs%60;
+  return m + ':' + String(s).padStart(2,'0');
 }
 
-function runTimer(secs, id){
+function startWarmup(){
+  warmupIndex = 0;
+  if(timerIv){ clearInterval(timerIv); timerIv = null; }
+  renderWarmupStep();
+}
+
+function renderWarmupStep(){
+  const c = document.getElementById('content');
+  if(warmupIndex >= WARMUP.length){
+    c.innerHTML = `
+      <h2>Stretch done</h2>
+      <div class="card">
+        <p>That was the whole session. The app stops here. It does not start a workout.</p>
+        <p class="small">Go play, or start a full-body session if this was a training day.</p>
+      </div>
+      <button onclick="document.getElementById('content').innerHTML=''">Done — go play</button>
+      <button class="secondary" onclick="generateWorkout()">Start a full-body workout</button>
+    `;
+    return;
+  }
+  const w = WARMUP[warmupIndex];
+  const n = warmupIndex + 1;
+  c.innerHTML = `
+    <p class="small">${w.block}</p>
+    <h2>Pre-round stretch · ${n} of ${WARMUP.length}</h2>
+    <p class="small">One move at a time. Start the step to run its countdown. When it hits zero, the next move comes up. This does not start a workout.</p>
+    <div class="card">
+      <b>${w.name}</b> <span class="small">${w.reps} · ${fmtTime(w.secs)}</span>
+      <div class="how"><b>How to do it</b><br>${w.how}</div>
+      <a class="small" href="${w.video}" target="_blank" rel="noopener">Demo search (YouTube)</a>
+    </div>
+    <div class="timer" id="wtimer">${fmtTime(w.secs)}</div>
+    <button id="wuStart" onclick="runWarmupStep()">Start this step</button>
+    <button class="secondary" onclick="nextWarmupStep()">Skip / next</button>
+  `;
+}
+
+function runWarmupStep(){
+  const w = WARMUP[warmupIndex];
+  const b = document.getElementById('wuStart');
+  if(b){ b.disabled = true; b.textContent = 'Going…'; }
+  runTimer(w.secs, 'wtimer', nextWarmupStep);
+}
+
+function nextWarmupStep(){
+  if(timerIv){ clearInterval(timerIv); timerIv = null; }
+  warmupIndex++;
+  renderWarmupStep();
+}
+
+function runTimer(secs, id, onDone){
   if(timerIv) clearInterval(timerIv);
   let t = secs;
   const el = document.getElementById(id);
+  if(el) el.textContent = fmtTime(t);
   timerIv = setInterval(()=>{
     t--;
-    const m = Math.floor(t/60); const s = t%60;
-    el.textContent = m + ':' + s.toString().padStart(2,'0');
-    if(t<=0){ clearInterval(timerIv); timerIv=null; el.textContent='Done'; }
+    if(el) el.textContent = fmtTime(Math.max(0,t));
+    if(t<=0){
+      clearInterval(timerIv);
+      timerIv = null;
+      if(typeof onDone === 'function') onDone();
+    }
   },1000);
 }
 
