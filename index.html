@@ -38,6 +38,12 @@ label{font-size:0.9rem;color:#94a3b8}
 .dot{flex:1;height:8px;border-radius:99px;background:#334155}
 .dot.on{background:#16a34a}
 a{color:#38bdf8}
+.setrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid #334155}
+.setrow .sn{font-size:0.8rem;color:#94a3b8;min-width:40px}
+.setrow input{width:56px}
+button.tiny{width:auto;display:inline-block;padding:8px 12px;margin:8px 6px 0 0;font-size:0.9rem}
+button.bw{background:#334155}
+button.bw.on{background:#16a34a}
 </style>
 </head>
 <body>
@@ -205,6 +211,8 @@ const EXERCISES = [
 let screen = {balance:null, overhead:null, hinge:null};
 let history = JSON.parse(localStorage.getItem('pw_history') || localStorage.getItem('silo_history') || '[]');
 let currentWorkout = [];
+let setCounts = [];
+let draft = [];
 let timerIv = null;
 let workoutStart = null;
 let workoutIv = null;
@@ -358,6 +366,8 @@ function generateWorkout(){
     selected.push(extras.splice(i,1)[0]);
   }
   currentWorkout = selected;
+  setCounts = selected.map(() => 3);
+  draft = selected.map(() => [{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'}]);
   startWorkoutClock();
   renderWorkout();
 }
@@ -392,15 +402,70 @@ function fmtDuration(secs){
   return m + ' min ' + s + ' sec';
 }
 
+function sideNote(ex){
+  if(/\/side/.test(ex.sets)) return 'Log reps per side, not total. 10/side × 3 sets = 60 total.';
+  if(/\/dir/.test(ex.sets)) return 'Log reps per direction, not total.';
+  return 'Log each set. Weight can be a number or BW for bodyweight.';
+}
+
+function sideLabel(ex){
+  if(/\/side/.test(ex.sets)) return 'per side';
+  if(/\/dir/.test(ex.sets)) return 'per dir';
+  return '';
+}
+
+function readDraft(){
+  currentWorkout.forEach((ex,i) => {
+    const n = setCounts[i] || 3;
+    if(!draft[i]) draft[i] = [];
+    for(let s=0;s<n;s++){
+      const wEl = document.getElementById('w'+i+'_'+s);
+      if(!wEl) continue;
+      draft[i][s] = {
+        w: wEl.value || '',
+        r: (document.getElementById('r'+i+'_'+s)||{}).value || '',
+        p: (document.getElementById('p'+i+'_'+s)||{}).value || '',
+        pain: (document.getElementById('pain'+i+'_'+s)||{}).value || '0'
+      };
+    }
+  });
+}
+
+function addSet(i){
+  readDraft();
+  setCounts[i] = (setCounts[i] || 3) + 1;
+  if(!draft[i]) draft[i] = [];
+  draft[i].push({w:'',r:'',p:'',pain:'0'});
+  renderWorkout();
+}
+
+function removeSet(i){
+  if((setCounts[i] || 3) <= 1) return;
+  readDraft();
+  setCounts[i] -= 1;
+  draft[i] = (draft[i] || []).slice(0, setCounts[i]);
+  renderWorkout();
+}
+
+function setBW(i,s){
+  const el = document.getElementById('w'+i+'_'+s);
+  if(!el) return;
+  el.value = (el.value === 'BW') ? '' : 'BW';
+  const b = document.getElementById('bw'+i+'_'+s);
+  if(b) b.classList.toggle('on', el.value === 'BW');
+}
+
 function renderWorkout(){
   const c = document.getElementById('content');
   const live = workoutStart ? fmtTime(Math.floor((Date.now() - workoutStart) / 1000)) : '0:00';
   let html = `<div class="wok-clock"><div class="l">Session clock</div><div class="t" id="wokclock">${live}</div></div>
     <h2>Full-body session</h2>
-    <p class="small">Clock started when you generated this session. Save Session stops it and stores the time. 3 sets typical. Rest 60–90s.</p>`;
+    <p class="small">Clock is running. Each set is its own row. Tap + Set if you do more. Tap BW if there is no load. Unilateral lifts are logged per side.</p>`;
   currentWorkout.forEach((ex,i) => {
-    const last = history.filter(h => h.id===ex.id).slice(-1)[0];
-    const sug = last && last.rpe<=6 && !last.pain ? (parseFloat(last.weight)||0)+2.5 : (last?last.weight:'');
+    const n = setCounts[i] || 3;
+    if(!draft[i]) draft[i] = [];
+    const last = history.filter(h => h.id===ex.id && h.id !== '_session').slice(-1)[0];
+    const sl = sideLabel(ex);
     html += `
       <div class="card" id="ex${i}">
         <b>${ex.name}</b> <span class="small">${ex.sets}</span>
@@ -408,15 +473,35 @@ function renderWorkout(){
         <div class="cue"><b>Cues</b> — ${ex.cues}</div>
         <div class="small">Mods: ${ex.mods}</div>
         <a class="small" href="${ex.video}" target="_blank" rel="noopener">Demo search (YouTube)</a>
-        <div style="margin-top:8px">
-          <label>Wt <input type="number" id="w${i}" value="${sug||''}" step="0.5"></label>
-          <label>Reps <input type="number" id="r${i}" value="${last?last.reps:''}"></label>
-          <label>RPE <input type="number" id="p${i}" min="1" max="10" value="${last?last.rpe:''}"></label>
-          <label>Pain? <select id="pain${i}"><option value="0">No</option><option value="1">Yes</option></select></label>
-        </div>
-      </div>`;
+        <p class="small">${sideNote(ex)}</p>`;
+    for(let s=0;s<n;s++){
+      const d = draft[i][s] || {};
+      let w = d.w;
+      let r = d.r;
+      let pval = d.p;
+      let pain = d.pain || '0';
+      if(w===undefined || w===null) w = '';
+      if(s===0 && w==='' && last && last.weight){
+        w = (last.rpe<=6 && !last.pain && last.weight !== 'BW' && !isNaN(parseFloat(last.weight))) ? (parseFloat(last.weight)+2.5) : last.weight;
+        if(r==='') r = last.reps || '';
+        if(pval==='') pval = last.rpe || '';
+      }
+      const bwOn = (String(w)==='BW') ? ' on' : '';
+      html += `
+        <div class="setrow">
+          <span class="sn">Set ${s+1}</span>
+          <label>Wt <input type="text" id="w${i}_${s}" value="${w}" inputmode="decimal" placeholder="lb or BW"></label>
+          <button type="button" class="tiny bw${bwOn}" id="bw${i}_${s}" onclick="setBW(${i},${s})">BW</button>
+          <label>Reps ${sl} <input type="number" id="r${i}_${s}" value="${r||''}"></label>
+          <label>RPE <input type="number" id="p${i}_${s}" min="1" max="10" value="${pval||''}"></label>
+          <label>Pain <select id="pain${i}_${s}"><option value="0"${pain!=='1'?' selected':''}>No</option><option value="1"${pain==='1'?' selected':''}>Yes</option></select></label>
+        </div>`;
+    }
+    html += `<button type="button" class="tiny" onclick="addSet(${i})">+ Set</button>`;
+    if(n>1) html += `<button type="button" class="tiny secondary" onclick="removeSet(${i})">– Set</button>`;
+    html += `</div>`;
   });
-  html += `<button onclick="saveSession()">Save Session (progressive)</button>`;
+  html += `<button onclick="saveSession()">Save Session</button>`;
   c.innerHTML = html;
 }
 
@@ -425,12 +510,21 @@ function saveSession(){
   const secs = stopWorkoutClock();
   const dur = fmtDuration(secs);
   currentWorkout.forEach((ex,i) => {
-    const w = document.getElementById('w'+i).value;
-    const r = document.getElementById('r'+i).value;
-    const p = document.getElementById('p'+i).value;
-    const pain = document.getElementById('pain'+i).value==='1';
-    if(w||r){
-      history.push({date, id:ex.id, name:ex.name, weight:w, reps:r, rpe:p, pain, duration:secs});
+    const n = setCounts[i] || 3;
+    const sl = sideLabel(ex);
+    for(let s=0;s<n;s++){
+      const wEl = document.getElementById('w'+i+'_'+s);
+      const rEl = document.getElementById('r'+i+'_'+s);
+      const pEl = document.getElementById('p'+i+'_'+s);
+      const painEl = document.getElementById('pain'+i+'_'+s);
+      if(!wEl) continue;
+      const w = wEl.value;
+      const r = rEl ? rEl.value : '';
+      const pval = pEl ? pEl.value : '';
+      const pain = painEl && painEl.value==='1';
+      if(w||r){
+        history.push({date, id:ex.id, name:ex.name, set:s+1, weight:w, reps:r, rpe:pval, pain, perSide:!!sl, sideLabel:sl, duration:secs});
+      }
     }
   });
   history.push({date, id:'_session', name:'Full-body session', duration:secs, elapsed:dur});
@@ -451,7 +545,9 @@ function showHistory(){
     if(h.id === '_session'){
       html += `<div class="ex"><span>${h.date} ${h.name}</span><span>${h.elapsed || fmtDuration(h.duration||0)}</span></div>`;
     } else {
-      html += `<div class="ex"><span>${h.date} ${h.name}</span><span>${h.weight}x${h.reps} RPE${h.rpe}${h.pain?' PAIN':''}</span></div>`;
+      const side = h.perSide && h.sideLabel ? ' '+h.sideLabel : '';
+      const setn = h.set ? ' S'+h.set : '';
+      html += `<div class="ex"><span>${h.date} ${h.name}${setn}</span><span>${h.weight}×${h.reps}${side} RPE${h.rpe}${h.pain?' PAIN':''}</span></div>`;
     }
   });
   c.innerHTML = html;
