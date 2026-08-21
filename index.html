@@ -82,7 +82,11 @@ button.bw.on{background:#16a34a}
     <div class="disclaimer">Stop on sharp pain. Rate of Perceived Exertion (RPE) 6–7 target. Deload if consecutive high RPE or any pain.</div>
     <button onclick="startWarmup()">Pre-round stretch (12 min)</button>
     <p class="small">Same golf-muscle routine as a workout warm-up. Stretch only — it stops when the last step is done. It will not start lifts.</p>
-    <button onclick="generateWorkout()">Generate Full-Body Session</button>
+    <button onclick="startTemplate('A')">Workout A</button>
+    <p class="small">Squat, RDL, press, row, suitcase, reverse lunge, chop, Pallof. Same lifts every A day.</p>
+    <button onclick="startTemplate('B')">Workout B</button>
+    <p class="small">Offset squat, single-leg RDL, floor press, row, farmer, lateral lunge, lift, swing. Same lifts every B day.</p>
+    <button class="secondary" onclick="startLast()">Same as last</button>
     <button class="secondary" onclick="showHistory()">History &amp; Progress</button>
     <button class="secondary" onclick="showSelfVideo()">Self-video (optional)</button>
     <div id="content"></div>
@@ -296,7 +300,9 @@ function renderWarmupStep(){
         <p class="small">Go play, or start a full-body session if this was a training day.</p>
       </div>
       <button onclick="document.getElementById('content').innerHTML=''">Done — go play</button>
-      <button class="secondary" onclick="generateWorkout()">Start a full-body workout</button>
+      <button class="secondary" onclick="startTemplate('A')">Start Workout A</button>
+      <button class="secondary" onclick="startTemplate('B')">Start Workout B</button>
+      <button class="secondary" onclick="startLast()">Same as last</button>
     `;
     return;
   }
@@ -346,31 +352,83 @@ function runTimer(secs, id, onDone){
   },1000);
 }
 
-function generateWorkout(){
+const TEMPLATE_A = ['goblet','rdl','hkpress','row','suitcase','reverse_lunge','chop','pallof'];
+const TEMPLATE_B = ['offset_squat','slrdl','floorpress','row','farmer','lateral_lunge','lift','swing'];
+const TEMPLATE_ALTS = {
+  rdl: ['hipthrust','goblet'],
+  slrdl: ['rdl','reverse_lunge','hipthrust'],
+  swing: ['hipthrust','rdl'],
+  hkpress: ['floorpress'],
+  windmill: ['halo'],
+  tgu_half: ['deadbug','halo'],
+  bulgarian: ['reverse_lunge'],
+  stepup: ['reverse_lunge'],
+  lateral_lunge: ['reverse_lunge','stepup']
+};
+
+let sessionLabel = 'Workout';
+
+function lockedIds(){
   const locked = [];
   if(!screen.balance) locked.push('slrdl','stepup','swing','bulgarian','lateral_lunge');
   if(!screen.overhead) locked.push('hkpress','windmill','tgu_half','swing');
   if(!screen.hinge) locked.push('rdl','slrdl','swing','windmill');
+  return locked;
+}
 
-  const pool = EXERCISES.filter(e => !locked.includes(e.id));
-  const byCat = {};
-  pool.forEach(e => { if(!byCat[e.cat]) byCat[e.cat]=[]; byCat[e.cat].push(e); });
-
-  const selected = [];
-  ['squat','hinge','push','pull','carry','single'].forEach(c => {
-    if(byCat[c] && byCat[c].length) selected.push(byCat[c][Math.floor(Math.random()*byCat[c].length)]);
+function resolveTemplate(ids){
+  const locked = lockedIds();
+  const used = new Set();
+  const out = [];
+  ids.forEach(id => {
+    let pick = id;
+    if(locked.includes(pick) || used.has(pick)){
+      const alts = (TEMPLATE_ALTS[id] || []).concat(EXERCISES.map(e => e.id));
+      pick = alts.find(a => !locked.includes(a) && !used.has(a)) || id;
+    }
+    if(locked.includes(pick)) return;
+    used.add(pick);
+    const ex = EXERCISES.find(e => e.id === pick);
+    if(ex) out.push(ex);
   });
-  const extras = pool.filter(e => !selected.includes(e));
-  while(selected.length < 8 && extras.length){
-    const i = Math.floor(Math.random()*extras.length);
-    selected.push(extras.splice(i,1)[0]);
-  }
+  return out;
+}
+
+function beginWorkout(selected, label){
   currentWorkout = selected;
+  sessionLabel = label;
   setCounts = selected.map(() => 3);
   draft = selected.map(() => [{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'}]);
+  localStorage.setItem('pw_last_ids', JSON.stringify(selected.map(e => e.id)));
+  localStorage.setItem('pw_last_label', label);
   startWorkoutClock();
   renderWorkout();
 }
+
+function startTemplate(which){
+  const ids = which === 'B' ? TEMPLATE_B : TEMPLATE_A;
+  const label = which === 'B' ? 'Workout B' : 'Workout A';
+  beginWorkout(resolveTemplate(ids), label);
+}
+
+function startLast(){
+  let ids = [];
+  try { ids = JSON.parse(localStorage.getItem('pw_last_ids') || '[]'); } catch(e){ ids = []; }
+  if(!ids.length && currentWorkout.length) ids = currentWorkout.map(e => e.id);
+  if(!ids.length){
+    const prev = [];
+    history.forEach(h => { if(h.id && h.id !== '_session' && !prev.includes(h.id)) prev.push(h.id); });
+    ids = prev.slice(0,8);
+  }
+  if(!ids.length){
+    alert('No last workout yet. Start A or B first.');
+    return;
+  }
+  const label = localStorage.getItem('pw_last_label') || 'Same as last';
+  beginWorkout(resolveTemplate(ids), label);
+}
+
+function generateWorkout(){ startTemplate('A'); }
 
 function startWorkoutClock(){
   if(workoutIv) clearInterval(workoutIv);
@@ -459,7 +517,7 @@ function renderWorkout(){
   const c = document.getElementById('content');
   const live = workoutStart ? fmtTime(Math.floor((Date.now() - workoutStart) / 1000)) : '0:00';
   let html = `<div class="wok-clock"><div class="l">Session clock</div><div class="t" id="wokclock">${live}</div></div>
-    <h2>Full-body session</h2>
+    <h2>${sessionLabel}</h2>
     <p class="small">Clock is running. Each set is its own row. Tap + Set if you do more. Tap BW if there is no load. Unilateral lifts are logged per side.</p>`;
   currentWorkout.forEach((ex,i) => {
     const n = setCounts[i] || 3;
