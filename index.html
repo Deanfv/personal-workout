@@ -48,6 +48,7 @@ button.painbtn{flex:1;min-height:48px;margin:0;width:auto}
 .painrow{display:flex;align-items:center;gap:8px}
 .jumplist{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .jumplist a{display:inline-block;background:#1e293b;border:1px solid #334155;padding:8px 10px;border-radius:8px;font-size:0.85rem;text-decoration:none;color:#e2e8f0}
+.jumplist a.on{background:#0284c7;border-color:#0284c7;color:#fff}
 .excard{scroll-margin-top:84px}
 .barwrap{background:#334155;border-radius:4px;height:10px;margin:4px 0 10px}
 .bar{background:#16a34a;height:10px;border-radius:4px}
@@ -96,6 +97,8 @@ button.bw.on{background:#16a34a}
     <div class="disclaimer">Stop on sharp pain. Rate of Perceived Exertion (RPE) 6–7 target. Deload if consecutive high RPE or any pain.</div>
     <button onclick="startWarmup()">Pre-round stretch (12 min)</button>
     <p class="small">Same golf-muscle routine as a workout warm-up. Stretch only — it stops when the last step is done. It will not start lifts.</p>
+    <button onclick="startShortWarmup()">Essentials stretch (5 min)</button>
+    <p class="small">Short pre-round path. Stretch only. It does not start lifts.</p>
     <button onclick="startTemplate('A')">Workout A</button>
     <p class="small">Squat, RDL, press, row, suitcase, reverse lunge, chop, Pallof. Same lifts every A day.</p>
     <button onclick="startTemplate('B')">Workout B</button>
@@ -236,6 +239,7 @@ let workoutStart = null;
 let workoutIv = null;
 let lastWorkoutSecs = null;
 let howOpen = [];
+let liftIndex = 0;
 
 function passScreen(key, val, btn){
   screen[key] = val;
@@ -293,6 +297,23 @@ const WARMUP = [
 ];
 
 let warmupIndex = 0;
+let warmupMode = 'full';
+
+function warmupByName(name){
+  return WARMUP.find(w => w.name === name);
+}
+
+const WARMUP_SHORT = [
+  Object.assign({}, warmupByName("World's Greatest Stretch"), {secs:90, block:'Essentials, 5 min'}),
+  Object.assign({}, warmupByName('Open Books'), {secs:60, block:'Essentials, 5 min'}),
+  Object.assign({}, warmupByName('90/90 Hip Switches'), {secs:60, block:'Essentials, 5 min'}),
+  Object.assign({}, warmupByName('Hip CARs'), {secs:60, block:'Essentials, 5 min'}),
+  Object.assign({}, warmupByName('Thoracic Rotations'), {secs:30, block:'Essentials, 5 min'})
+];
+
+function activeWarmup(){
+  return warmupMode === 'short' ? WARMUP_SHORT : WARMUP;
+}
 
 function fmtTime(secs){
   const m = Math.floor(secs/60); const s = secs%60;
@@ -300,6 +321,14 @@ function fmtTime(secs){
 }
 
 function startWarmup(){
+  warmupMode = 'full';
+  warmupIndex = 0;
+  if(timerIv){ clearInterval(timerIv); timerIv = null; }
+  renderWarmupStep();
+}
+
+function startShortWarmup(){
+  warmupMode = 'short';
   warmupIndex = 0;
   if(timerIv){ clearInterval(timerIv); timerIv = null; }
   renderWarmupStep();
@@ -307,7 +336,8 @@ function startWarmup(){
 
 function renderWarmupStep(){
   const c = document.getElementById('content');
-  if(warmupIndex >= WARMUP.length){
+  const list = activeWarmup();
+  if(warmupIndex >= list.length){
     c.innerHTML = `
       <h2>Stretch done</h2>
       <div class="card">
@@ -321,11 +351,12 @@ function renderWarmupStep(){
     `;
     return;
   }
-  const w = WARMUP[warmupIndex];
+  const w = list[warmupIndex];
   const n = warmupIndex + 1;
+  const title = warmupMode === 'short' ? 'Essentials stretch' : 'Pre-round stretch';
   c.innerHTML = `
     <p class="small">${w.block}</p>
-    <h2>Pre-round stretch · ${n} of ${WARMUP.length}</h2>
+    <h2>${title} · ${n} of ${list.length}</h2>
     <p class="small">One move at a time. Start the step to run its countdown. When it hits zero, the next move comes up. This does not start a workout.</p>
     <div class="card">
       <b>${w.name}</b> <span class="small">${w.reps} · ${fmtTime(w.secs)}</span>
@@ -339,7 +370,7 @@ function renderWarmupStep(){
 }
 
 function runWarmupStep(){
-  const w = WARMUP[warmupIndex];
+  const w = activeWarmup()[warmupIndex];
   const b = document.getElementById('wuStart');
   if(b){ b.disabled = true; b.textContent = 'Going…'; }
   runTimer(w.secs, 'wtimer', nextWarmupStep);
@@ -412,6 +443,7 @@ function resolveTemplate(ids){
 function beginWorkout(selected, label){
   currentWorkout = selected;
   sessionLabel = label;
+  liftIndex = 0;
   setCounts = selected.map(() => 3);
   howOpen = selected.map(() => false);
   draft = selected.map(() => [{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'}]);
@@ -588,18 +620,44 @@ function lastLine(ex){
   return '<p class="small">Last: ' + last.weight + ' x ' + last.reps + side + ' RPE ' + (last.rpe || '?') + (last.pain ? ' PAIN' : '') + ' (' + last.date + ')</p>';
 }
 
+function goToLift(i){
+  readDraft();
+  if(!currentWorkout.length) return;
+  if(i < 0) i = 0;
+  if(i >= currentWorkout.length) i = currentWorkout.length - 1;
+  liftIndex = i;
+  renderWorkout();
+}
+
+function nextLift(){
+  readDraft();
+  if(liftIndex < currentWorkout.length - 1) liftIndex++;
+  renderWorkout();
+}
+
+function prevLift(){
+  readDraft();
+  if(liftIndex > 0) liftIndex--;
+  renderWorkout();
+}
+
 function renderWorkout(){
   const c = document.getElementById('content');
   const live = workoutStart ? fmtTime(Math.floor((Date.now() - workoutStart) / 1000)) : '0:00';
+  const total = currentWorkout.length;
+  if(liftIndex < 0) liftIndex = 0;
+  if(liftIndex >= total) liftIndex = Math.max(0, total - 1);
   let html = `<div class="wok-clock"><div class="l">Session clock</div><div class="t" id="wokclock">${live}</div></div>
     <h2>${sessionLabel}</h2>
+    <p>Lift ${liftIndex+1} of ${total}</p>
     <p class="small">Clock is running. Log the set in front of you. Tap + Set if you do more. Tap BW if there is no load. Unilateral lifts are logged per side.</p>
     <div class="jumplist">`;
   currentWorkout.forEach((ex,i) => {
-    html += `<a href="#ex${i}">${ex.name}</a>`;
+    html += `<a href="#ex${i}" class="${i===liftIndex?'on':''}" onclick="goToLift(${i});return false">${ex.name}</a>`;
   });
   html += `</div>`;
   currentWorkout.forEach((ex,i) => {
+    if(i !== liftIndex) return;
     const n = setCounts[i] || 3;
     if(!draft[i]) draft[i] = [];
     const last = history.filter(h => h.id===ex.id && h.id !== '_session').slice(-1)[0];
@@ -662,11 +720,21 @@ function renderWorkout(){
     if(n>1) html += `<button type="button" class="tiny secondary" onclick="removeSet(${i})">- Set</button>`;
     html += `</div>`;
   });
+  if(total){
+    if(liftIndex === total - 1){
+      html += `<p class="small">Last lift. Tap Save Session when you are done.</p>`;
+    }
+    if(liftIndex > 0){
+      html += `<button class="secondary" onclick="prevLift()">Previous</button>`;
+    }
+    html += `<button onclick="nextLift()">Next</button>`;
+  }
   html += `<button onclick="saveSession()">Save Session</button>`;
   c.innerHTML = html;
 }
 
 function saveSession(){
+  readDraft();
   const date = new Date().toISOString().slice(0,10);
   const secs = stopWorkoutClock();
   const dur = fmtDuration(secs);
@@ -678,11 +746,11 @@ function saveSession(){
       const rEl = document.getElementById('r'+i+'_'+s);
       const pEl = document.getElementById('p'+i+'_'+s);
       const painEl = document.getElementById('pain'+i+'_'+s);
-      if(!wEl) continue;
-      const w = wEl.value;
-      const r = rEl ? rEl.value : '';
-      const pval = pEl ? pEl.value : '';
-      const pain = painEl && painEl.value==='1';
+      const d = (draft[i] && draft[i][s]) || {};
+      const w = wEl ? wEl.value : (d.w || '');
+      const r = wEl ? (rEl ? rEl.value : '') : (d.r || '');
+      const pval = wEl ? (pEl ? pEl.value : '') : (d.p || '');
+      const pain = wEl ? (painEl && painEl.value==='1') : (d.pain === '1');
       if(w||r){
         history.push({date, id:ex.id, name:ex.name, set:s+1, weight:w, reps:r, rpe:pval, pain, perSide:!!sl, sideLabel:sl, duration:secs});
       }
