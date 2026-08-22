@@ -27,6 +27,7 @@ label{font-size:0.9rem;color:#94a3b8}
 .hidden{display:none}
 #screen{min-height:100vh}
 .timer{font-size:2rem;text-align:center;margin:12px 0}
+.splitcue{font-size:1.5rem;text-align:center;font-weight:700;color:#38bdf8;margin:4px 0 10px}
 .wok-clock{position:sticky;top:0;z-index:5;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px;margin:8px 0 12px;text-align:center}
 .wok-clock .t{font-size:1.8rem;font-variant-numeric:tabular-nums;color:#38bdf8}
 .wok-clock .l{font-size:0.8rem;color:#94a3b8}
@@ -95,10 +96,11 @@ button.bw.on{background:#16a34a}
   <div id="main" class="screen hidden">
     <h1>Personal Workout</h1>
     <div class="disclaimer">Stop on sharp pain. Rate of Perceived Exertion (RPE) 6–7 target. Deload if consecutive high RPE or any pain.</div>
-    <button onclick="startWarmup()">Pre-round stretch (12 min)</button>
-    <p class="small">Same golf-muscle routine as a workout warm-up. Stretch only — it stops when the last step is done. It will not start lifts.</p>
-    <button onclick="startShortWarmup()">Essentials stretch (5 min)</button>
-    <p class="small">Short pre-round path. Stretch only. It does not start lifts.</p>
+    <h2>Pre-round stretch</h2>
+    <p class="small">Stretch only. Pick how much time you have. None of these start lifts.</p>
+    <button onclick="startWarmup('short')">Stretch (5 min)</button>
+    <button onclick="startWarmup('full')">Stretch (12 min)</button>
+    <button onclick="startWarmup('long')">Stretch (18 min)</button>
     <button onclick="startTemplate('A')">Workout A</button>
     <p class="small">Squat, RDL, press, row, suitcase, reverse lunge, chop, Pallof. Same lifts every A day.</p>
     <button onclick="startTemplate('B')">Workout B</button>
@@ -267,52 +269,102 @@ function startApp(){
 }
 
 const WARMUP = [
-  {block:'0–4 min — raise temperature', name:'March in place / light walk', reps:'continuous', secs:180,
+  {block:'0-4 min, raise temperature (12 min)', name:'March in place / light walk', reps:'continuous', secs:180,
     how:'Easy pace. Stand tall, swing the opposite arm and leg, and let the heel kiss the ground each step. You should feel warmer, not winded. If you have space, walk the room. This is just to get blood moving before you load the joints.',
     video:'https://www.youtube.com/watch?v=16oJspYFz7s'},
-  {block:'0–4 min — raise temperature', name:'Arm Circles', reps:'10 each way', secs:60,
+  {block:'0-4 min, raise temperature (12 min)', name:'Arm Circles', reps:'10 each way', secs:60,
     how:'Arms long at shoulder height. Draw smooth circles, small then a little bigger. Reverse. Keep the ribs down so you are not arching the low back. Stops at any sharp shoulder pinch — shrink the circle.',
     video:'https://www.youtube.com/watch?v=35h5gdlm46w'},
-  {block:'4–8 min — hips, T-spine, ankles', name:"World's Greatest Stretch", reps:'5/side', secs:90,
+  {block:'4-8 min, hips, T-spine, ankles (12 min)', name:"World's Greatest Stretch", reps:'5/side', secs:90,
     how:'Step into a long lunge, both hands inside the front foot. Drop the back knee toward the floor. Keep the front heel down. Rotate the same-side arm to the sky and follow it with your eyes, then return the hand to the floor. That one pattern opens the hip flexor, thoracic spine, and ankle — the three joints golfers lose first.',
     video:'https://www.youtube.com/watch?v=nnbYao-5bSI'},
-  {block:'4–8 min — hips, T-spine, ankles', name:'Open Books', reps:'8/side', secs:90,
+  {block:'4-8 min, hips, T-spine, ankles (12 min)', name:'Open Books', reps:'8/side', secs:90,
     how:'Lie on your side, knees stacked at 90°, arms straight in front of you. Keep the knees pinned. Reach the top arm up and over like you are opening a book, rotating the chest to the ceiling. Pause when the shoulder blade is on the floor (or as far as is easy), then close. If the knees lift, you went too far. This is the go-to T-spine drill on tour.',
     video:'https://www.youtube.com/watch?v=OW6YHlxY6JI'},
-  {block:'4–8 min — hips, T-spine, ankles', name:'90/90 Hip Switches', reps:'6/side', secs:60,
+  {block:'4-8 min, hips, T-spine, ankles (12 min)', name:'90/90 Hip Switches', reps:'6/side', secs:60,
     how:'Sit with both knees bent 90° — front shin across, back shin to the side. Tall chest. Without using your hands if you can, rotate both knees to the other side so you land in 90/90 the other way. Move slow. If the hips are sticky, use a hand on the floor. This trains internal and external hip rotation, the motion you need in the backswing and downswing.',
     video:'https://www.youtube.com/watch?v=m51AZSXMvEA'},
-  {block:'8–12 min — control the new range', name:'Hip CARs', reps:'5/side', secs:90,
+  {block:'8-12 min, control the new range (12 min)', name:'Hip CARs', reps:'5/side', secs:90,
     how:'Stand and hold a wall or club. Lift one knee to 90°. Draw the biggest slow circle you can: knee out, heel back, then around without the pelvis tipping or the standing hip hiking. Reverse. CARs means controlled articular rotations — you own the range, you do not bounce into it.',
     video:'https://www.youtube.com/watch?v=hJ8muvPg5Ng'},
-  {block:'8–12 min — control the new range', name:'Thoracic Rotations', reps:'8/side', secs:60,
+  {block:'8-12 min, control the new range (12 min)', name:'Thoracic Rotations', reps:'8/side', secs:60,
     how:'Half-kneel or sit tall. Cross the arms on the chest or hold a club across the shoulders. Rotate the ribcage over a quiet pelvis — hips stay square, chest turns. Exhale as you rotate. Stop when the hips want to come with you. This is the separation you use to load the backswing without swaying.',
     video:'https://www.youtube.com/watch?v=VkGwj9ps4EA'},
-  {block:'8–12 min — control the new range', name:'Glute Bridges', reps:'10', secs:60,
+  {block:'8-12 min, control the new range (12 min)', name:'Glute Bridges', reps:'10', secs:60,
     how:'Lie on your back, feet under the knees, arms by your sides. Drive through the heels and squeeze the glutes until the hips are open and the shin is vertical. Lower under control. Do not push from the low back. Wakes up the hips before you hinge or swing.',
     video:'https://www.youtube.com/watch?v=XLXGydU5DdU'},
-  {block:'8–12 min — control the new range', name:'Shoulder Circles', reps:'8 each way', secs:30,
+  {block:'8-12 min, control the new range (12 min)', name:'Shoulder Circles', reps:'8 each way', secs:30,
     how:'Smaller than the arm circles. Roll the shoulders back, up, and around, then reverse. Think shoulder blades sliding on the ribcage, not shrugging into the ears. Finish feeling packed and tall.',
     video:'https://www.youtube.com/watch?v=kkFHy3sCbi0'}
 ];
 
 let warmupIndex = 0;
 let warmupMode = 'full';
+let warmupHalf = 0;
+let switchTo = null;
 
 function warmupByName(name){
   return WARMUP.find(w => w.name === name);
 }
 
 const WARMUP_SHORT = [
-  Object.assign({}, warmupByName("World's Greatest Stretch"), {secs:90, block:'Essentials, 5 min'}),
-  Object.assign({}, warmupByName('Open Books'), {secs:60, block:'Essentials, 5 min'}),
-  Object.assign({}, warmupByName('90/90 Hip Switches'), {secs:60, block:'Essentials, 5 min'}),
-  Object.assign({}, warmupByName('Hip CARs'), {secs:60, block:'Essentials, 5 min'}),
-  Object.assign({}, warmupByName('Thoracic Rotations'), {secs:30, block:'Essentials, 5 min'})
+  Object.assign({}, warmupByName("World's Greatest Stretch"), {secs:90, block:'5 min'}),
+  Object.assign({}, warmupByName('Open Books'), {secs:60, block:'5 min'}),
+  Object.assign({}, warmupByName('90/90 Hip Switches'), {secs:60, block:'5 min'}),
+  Object.assign({}, warmupByName('Hip CARs'), {secs:60, block:'5 min'}),
+  Object.assign({}, warmupByName('Thoracic Rotations'), {secs:30, block:'5 min'})
+];
+
+const WARMUP_LONG = [
+  Object.assign({}, warmupByName('March in place / light walk'), {secs:180, block:'18 min, raise temperature'}),
+  Object.assign({}, warmupByName('Arm Circles'), {secs:90, block:'18 min, raise temperature'}),
+  Object.assign({}, warmupByName("World's Greatest Stretch"), {secs:150, block:'18 min, hips, T-spine, ankles'}),
+  Object.assign({}, warmupByName('Open Books'), {secs:150, block:'18 min, hips, T-spine, ankles'}),
+  Object.assign({}, warmupByName('90/90 Hip Switches'), {secs:90, block:'18 min, hips, T-spine, ankles'}),
+  Object.assign({}, warmupByName('Hip CARs'), {secs:150, block:'18 min, control the new range'}),
+  Object.assign({}, warmupByName('Thoracic Rotations'), {secs:90, block:'18 min, control the new range'}),
+  Object.assign({}, warmupByName('Glute Bridges'), {secs:90, block:'18 min, control the new range'}),
+  Object.assign({}, warmupByName('Shoulder Circles'), {secs:90, block:'18 min, control the new range'})
 ];
 
 function activeWarmup(){
-  return warmupMode === 'short' ? WARMUP_SHORT : WARMUP;
+  if(warmupMode === 'short') return WARMUP_SHORT;
+  if(warmupMode === 'long') return WARMUP_LONG;
+  return WARMUP;
+}
+
+function warmupSplit(w){
+  if(w.split) return w.split;
+  if(/\/side/.test(w.reps || '')) return 'side';
+  if(/each way/i.test(w.reps || '')) return 'dir';
+  return '';
+}
+
+function splitHalves(secs){
+  const first = Math.floor(secs / 2);
+  return [first, secs - first];
+}
+
+function splitPlain(w){
+  const kind = warmupSplit(w);
+  if(!kind) return '';
+  const each = Math.floor(w.secs / 2);
+  const unit = kind === 'dir' ? 'direction' : 'side';
+  return fmtTime(w.secs) + ' total. ' + each + ' seconds each ' + unit + '. Switch when it says.';
+}
+
+function splitFirstLabel(kind){
+  return kind === 'dir' ? 'This direction' : 'This side';
+}
+
+function splitOtherLabel(kind){
+  return kind === 'dir' ? 'Other direction' : 'Other side';
+}
+
+function warmupTitle(){
+  if(warmupMode === 'short') return '5 min stretch';
+  if(warmupMode === 'long') return '18 min stretch';
+  return '12 min stretch';
 }
 
 function fmtTime(secs){
@@ -320,18 +372,25 @@ function fmtTime(secs){
   return m + ':' + String(s).padStart(2,'0');
 }
 
-function startWarmup(){
-  warmupMode = 'full';
-  warmupIndex = 0;
+function clearWarmupTimers(){
   if(timerIv){ clearInterval(timerIv); timerIv = null; }
+  if(switchTo){ clearTimeout(switchTo); switchTo = null; }
+}
+
+function startWarmup(mode){
+  warmupMode = mode || 'full';
+  warmupIndex = 0;
+  warmupHalf = 0;
+  clearWarmupTimers();
   renderWarmupStep();
 }
 
 function startShortWarmup(){
-  warmupMode = 'short';
-  warmupIndex = 0;
-  if(timerIv){ clearInterval(timerIv); timerIv = null; }
-  renderWarmupStep();
+  startWarmup('short');
+}
+
+function startLongWarmup(){
+  startWarmup('long');
 }
 
 function renderWarmupStep(){
@@ -344,7 +403,11 @@ function renderWarmupStep(){
         <p>That was the whole session. The app stops here. It does not start a workout.</p>
         <p class="small">Go play, or start a full-body session if this was a training day.</p>
       </div>
-      <button onclick="document.getElementById('content').innerHTML=''">Done — go play</button>
+      <p class="small">Stretch again if you want more time.</p>
+      <button onclick="startWarmup('short')">Stretch (5 min)</button>
+      <button onclick="startWarmup('full')">Stretch (12 min)</button>
+      <button onclick="startWarmup('long')">Stretch (18 min)</button>
+      <button onclick="document.getElementById('content').innerHTML=''">Done, go play</button>
       <button class="secondary" onclick="startTemplate('A')">Start Workout A</button>
       <button class="secondary" onclick="startTemplate('B')">Start Workout B</button>
       <button class="secondary" onclick="startLast()">Same as last</button>
@@ -353,17 +416,23 @@ function renderWarmupStep(){
   }
   const w = list[warmupIndex];
   const n = warmupIndex + 1;
-  const title = warmupMode === 'short' ? 'Essentials stretch' : 'Pre-round stretch';
+  const kind = warmupSplit(w);
+  const halves = splitHalves(w.secs);
+  const shown = kind ? halves[0] : w.secs;
+  const splitNote = kind ? `<p>${splitPlain(w)}</p>` : '';
+  const splitCue = kind ? `<div class="splitcue" id="splitCue">${splitFirstLabel(kind)}</div>` : '';
   c.innerHTML = `
     <p class="small">${w.block}</p>
-    <h2>${title} · ${n} of ${list.length}</h2>
+    <h2>${warmupTitle()} · ${n} of ${list.length}</h2>
     <p class="small">One move at a time. Start the step to run its countdown. When it hits zero, the next move comes up. This does not start a workout.</p>
     <div class="card">
       <b>${w.name}</b> <span class="small">${w.reps} · ${fmtTime(w.secs)}</span>
+      ${splitNote}
       <div class="how"><b>How to do it</b><br>${w.how}</div>
       <a class="small" href="${w.video}" target="_blank" rel="noopener">Watch demo</a>
     </div>
-    <div class="timer" id="wtimer">${fmtTime(w.secs)}</div>
+    <div class="timer" id="wtimer">${fmtTime(shown)}</div>
+    ${splitCue}
     <button id="wuStart" onclick="runWarmupStep()">Start this step</button>
     <button class="secondary" onclick="nextWarmupStep()">Skip / next</button>
   `;
@@ -373,11 +442,36 @@ function runWarmupStep(){
   const w = activeWarmup()[warmupIndex];
   const b = document.getElementById('wuStart');
   if(b){ b.disabled = true; b.textContent = 'Going…'; }
-  runTimer(w.secs, 'wtimer', nextWarmupStep);
+  const kind = warmupSplit(w);
+  if(!kind){
+    warmupHalf = 0;
+    runTimer(w.secs, 'wtimer', nextWarmupStep);
+    return;
+  }
+  const halves = splitHalves(w.secs);
+  warmupHalf = 0;
+  const lab = document.getElementById('splitCue');
+  if(lab) lab.textContent = splitFirstLabel(kind);
+  runTimer(halves[0], 'wtimer', function(){ beginWarmupSwitch(kind, halves[1]); });
+}
+
+function beginWarmupSwitch(kind, secondSecs){
+  const lab = document.getElementById('splitCue');
+  if(lab) lab.textContent = 'Switch now';
+  if(switchTo) clearTimeout(switchTo);
+  switchTo = setTimeout(function(){
+    switchTo = null;
+    warmupHalf = 1;
+    if(lab) lab.textContent = splitOtherLabel(kind);
+    const el = document.getElementById('wtimer');
+    if(el) el.textContent = fmtTime(secondSecs);
+    runTimer(secondSecs, 'wtimer', nextWarmupStep);
+  }, 1200);
 }
 
 function nextWarmupStep(){
-  if(timerIv){ clearInterval(timerIv); timerIv = null; }
+  clearWarmupTimers();
+  warmupHalf = 0;
   warmupIndex++;
   renderWarmupStep();
 }
