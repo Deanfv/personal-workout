@@ -550,7 +550,7 @@ function beginWorkout(selected, label){
   swapCursor = {};
   setCounts = selected.map(() => 3);
   howOpen = selected.map(() => false);
-  draft = selected.map(() => [{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'}]);
+  draft = selected.map(() => [{w:'',r:'',p:'',pain:''},{w:'',r:'',p:'',pain:''},{w:'',r:'',p:'',pain:''}]);
   localStorage.setItem('pw_last_ids', JSON.stringify(selected.map(e => e.id)));
   localStorage.setItem('pw_last_label', label);
   startWorkoutClock();
@@ -655,7 +655,7 @@ function addSet(i){
   readDraft();
   setCounts[i] = (setCounts[i] || 3) + 1;
   if(!draft[i]) draft[i] = [];
-  draft[i].push({w:'',r:'',p:'',pain:'0'});
+  draft[i].push({w:'',r:'',p:'',pain:''});
   renderWorkout();
 }
 
@@ -806,7 +806,7 @@ function swapLift(){
   currentWorkout[i] = next;
   howOpen[i] = false;
   setCounts[i] = 3;
-  draft[i] = [{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'}];
+  draft[i] = [{w:'',r:'',p:'',pain:''},{w:'',r:'',p:'',pain:''},{w:'',r:'',p:'',pain:''}];
   try { localStorage.setItem('pw_last_ids', JSON.stringify(currentWorkout.map(e => e.id))); } catch(e){}
   renderWorkout();
 }
@@ -877,7 +877,7 @@ function renderWorkout(){
       let w = d.w;
       let r = d.r;
       let pval = d.p;
-      let pain = d.pain || '0';
+      let pain = (d.pain === '0' || d.pain === '1') ? d.pain : '';
       if(w===undefined || w===null) w = '';
       if(s===0 && w==='' && last && last.weight){
         w = (last.rpe<=6 && !last.pain && last.weight !== 'BW' && !isNaN(parseFloat(last.weight))) ? (parseFloat(last.weight)+2.5) : last.weight;
@@ -908,7 +908,7 @@ function renderWorkout(){
           <div class="painrow">
             <span class="slbl">Pain</span>
             <input type="hidden" id="pain${i}_${s}" value="${pain}">
-            <button type="button" class="painbtn${pain!=='1'?' selected':''}" onclick="setPain(${i},${s},'0',this)">No</button>
+            <button type="button" class="painbtn${pain==='0'?' selected':''}" onclick="setPain(${i},${s},'0',this)">No</button>
             <button type="button" class="painbtn${pain==='1'?' selected':''}" onclick="setPain(${i},${s},'1',this)">Yes</button>
           </div>
         </div>`;
