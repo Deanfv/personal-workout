@@ -51,6 +51,8 @@ button.setdone{width:48px;min-height:48px;padding:0;margin:0;font-size:1.2rem;fl
 .jumplist{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .jumplist a{display:inline-block;background:#1e293b;border:1px solid #334155;padding:8px 10px;border-radius:8px;font-size:0.85rem;text-decoration:none;color:#e2e8f0}
 .jumplist a.on{background:#0284c7;border-color:#0284c7;color:#fff}
+.jumplist a.did{background:#334155;color:#94a3b8;border-color:#334155}
+.jumplist a.did.on{background:#0284c7;color:#fff;border-color:#0284c7}
 .excard{scroll-margin-top:84px}
 .barwrap{background:#334155;border-radius:4px;height:10px;margin:4px 0 10px}
 .bar{background:#16a34a;height:10px;border-radius:4px}
@@ -248,6 +250,7 @@ let workoutIv = null;
 let lastWorkoutSecs = null;
 let howOpen = [];
 let liftIndex = 0;
+let liftDone = [];
 let swapCursor = {};
 let trackLog = true;
 (function loadTrack(){
@@ -556,6 +559,7 @@ function beginWorkout(selected, label){
   swapCursor = {};
   setCounts = selected.map(() => 3);
   howOpen = selected.map(() => false);
+  liftDone = selected.map(() => false);
   draft = selected.map(() => [{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false}]);
   localStorage.setItem('pw_last_ids', JSON.stringify(selected.map(e => e.id)));
   localStorage.setItem('pw_last_label', label);
@@ -690,10 +694,46 @@ function copyForward(i,s){
   if(pEl && nP && String(nP.value || '').trim() === '') nP.value = pEl.value || '';
 }
 
+
+function liftHasWork(i){
+  const rows = draft[i] || [];
+  const n = setCounts[i] || rows.length;
+  for(let s=0;s<n;s++){
+    const d = rows[s] || {};
+    if(d.done || d.w || d.r) return true;
+    const wEl = document.getElementById('w'+i+'_'+s);
+    if(wEl && String(wEl.value||'').trim()) return true;
+    const rEl = document.getElementById('r'+i+'_'+s);
+    if(rEl && String(rEl.value||'').trim()) return true;
+    const doneBtn = document.getElementById('done'+i+'_'+s);
+    if(doneBtn && doneBtn.classList.contains('selected')) return true;
+  }
+  return false;
+}
+
+function markLiftLeft(i){
+  if(i == null || i < 0) return;
+  if(!liftDone[i] && liftHasWork(i)) liftDone[i] = true;
+}
+
+function allSetsChecked(i){
+  const n = setCounts[i] || 3;
+  for(let s=0;s<n;s++){
+    const btn = document.getElementById('done'+i+'_'+s);
+    if(!btn || !btn.classList.contains('selected')) return false;
+  }
+  return n > 0;
+}
+
 function completeSet(i,s){
   const btn = document.getElementById('done'+i+'_'+s);
   if(btn) btn.classList.add('selected');
   copyForward(i,s);
+  if(allSetsChecked(i)){
+    liftDone[i] = true;
+    const a = document.querySelector('.jumplist a[href="#ex'+i+'"]');
+    if(a) a.classList.add('did');
+  }
 }
 
 function setBW(i,s){
@@ -834,6 +874,7 @@ function swapLift(){
   }
   currentWorkout[i] = next;
   howOpen[i] = false;
+  liftDone[i] = false;
   setCounts[i] = 3;
   draft[i] = [{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false}];
   try { localStorage.setItem('pw_last_ids', JSON.stringify(currentWorkout.map(e => e.id))); } catch(e){}
@@ -842,6 +883,7 @@ function swapLift(){
 
 function goToLift(i){
   readDraft();
+  markLiftLeft(liftIndex);
   if(!currentWorkout.length) return;
   if(i < 0) i = 0;
   if(i >= currentWorkout.length) i = currentWorkout.length - 1;
@@ -851,12 +893,14 @@ function goToLift(i){
 
 function nextLift(){
   readDraft();
+  markLiftLeft(liftIndex);
   if(liftIndex < currentWorkout.length - 1) liftIndex++;
   renderWorkout();
 }
 
 function prevLift(){
   readDraft();
+  markLiftLeft(liftIndex);
   if(liftIndex > 0) liftIndex--;
   renderWorkout();
 }
@@ -874,7 +918,7 @@ function renderWorkout(){
     <button type="button" class="${trackLog?'selected':'secondary'}" onclick="toggleTrack()">${trackLog?'Tracking on':'Tracking off'}</button>
     <div class="jumplist">`;
   currentWorkout.forEach((ex,i) => {
-    html += `<a href="#ex${i}" class="${i===liftIndex?'on':''}" onclick="goToLift(${i});return false">${ex.name}</a>`;
+    html += `<a href="#ex${i}" class="${i===liftIndex?'on':''}${liftDone[i]?' did':''}" onclick="goToLift(${i});return false">${ex.name}</a>`;
   });
   html += `</div>`;
   currentWorkout.forEach((ex,i) => {
