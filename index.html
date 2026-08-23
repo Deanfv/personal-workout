@@ -46,6 +46,7 @@ a{color:#38bdf8}
 .slbl{font-size:0.85rem;color:#94a3b8;min-width:44px;flex:0 0 auto}
 button.step{width:48px;min-width:48px;min-height:48px;padding:0;margin:0;font-size:1.4rem;flex:0 0 48px}
 button.painbtn{flex:1;min-height:48px;margin:0;width:auto}
+button.setdone{width:48px;min-height:48px;padding:0;margin:0;font-size:1.2rem;flex:0 0 48px}
 .painrow{display:flex;align-items:center;gap:8px}
 .jumplist{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .jumplist a{display:inline-block;background:#1e293b;border:1px solid #334155;padding:8px 10px;border-radius:8px;font-size:0.85rem;text-decoration:none;color:#e2e8f0}
@@ -550,7 +551,7 @@ function beginWorkout(selected, label){
   swapCursor = {};
   setCounts = selected.map(() => 3);
   howOpen = selected.map(() => false);
-  draft = selected.map(() => [{w:'',r:'',p:'',pain:''},{w:'',r:'',p:'',pain:''},{w:'',r:'',p:'',pain:''}]);
+  draft = selected.map(() => [{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false}]);
   localStorage.setItem('pw_last_ids', JSON.stringify(selected.map(e => e.id)));
   localStorage.setItem('pw_last_label', label);
   startWorkoutClock();
@@ -641,11 +642,13 @@ function readDraft(){
     for(let s=0;s<n;s++){
       const wEl = document.getElementById('w'+i+'_'+s);
       if(!wEl) continue;
+      const doneBtn = document.getElementById('done'+i+'_'+s);
       draft[i][s] = {
         w: wEl.value || '',
         r: (document.getElementById('r'+i+'_'+s)||{}).value || '',
         p: (document.getElementById('p'+i+'_'+s)||{}).value || '',
-        pain: (document.getElementById('pain'+i+'_'+s)||{}).value || '0'
+        pain: (document.getElementById('pain'+i+'_'+s)||{}).value || '',
+        done: !!(doneBtn && doneBtn.classList.contains('selected'))
       };
     }
   });
@@ -655,7 +658,7 @@ function addSet(i){
   readDraft();
   setCounts[i] = (setCounts[i] || 3) + 1;
   if(!draft[i]) draft[i] = [];
-  draft[i].push({w:'',r:'',p:'',pain:''});
+  draft[i].push({w:'',r:'',p:'',pain:'',done:false});
   renderWorkout();
 }
 
@@ -665,6 +668,27 @@ function removeSet(i){
   setCounts[i] -= 1;
   draft[i] = (draft[i] || []).slice(0, setCounts[i]);
   renderWorkout();
+}
+
+
+function copyForward(i,s){
+  const wEl = document.getElementById('w'+i+'_'+s);
+  const next = document.getElementById('w'+i+'_'+(s+1));
+  if(!wEl || !next) return;
+  if(String(next.value || '').trim() !== '') return;
+  next.value = wEl.value || '';
+  const rEl = document.getElementById('r'+i+'_'+s);
+  const nR = document.getElementById('r'+i+'_'+(s+1));
+  if(rEl && nR && String(nR.value || '').trim() === '') nR.value = rEl.value || '';
+  const pEl = document.getElementById('p'+i+'_'+s);
+  const nP = document.getElementById('p'+i+'_'+(s+1));
+  if(pEl && nP && String(nP.value || '').trim() === '') nP.value = pEl.value || '';
+}
+
+function completeSet(i,s){
+  const btn = document.getElementById('done'+i+'_'+s);
+  if(btn) btn.classList.add('selected');
+  copyForward(i,s);
 }
 
 function setBW(i,s){
@@ -806,7 +830,7 @@ function swapLift(){
   currentWorkout[i] = next;
   howOpen[i] = false;
   setCounts[i] = 3;
-  draft[i] = [{w:'',r:'',p:'',pain:''},{w:'',r:'',p:'',pain:''},{w:'',r:'',p:'',pain:''}];
+  draft[i] = [{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false}];
   try { localStorage.setItem('pw_last_ids', JSON.stringify(currentWorkout.map(e => e.id))); } catch(e){}
   renderWorkout();
 }
@@ -891,7 +915,7 @@ function renderWorkout(){
           <div class="stepper">
             <span class="slbl">Wt</span>
             <button type="button" class="step" onclick="stepWeight(${i},${s},-1)">-</button>
-            <input type="text" id="w${i}_${s}" value="${w}" inputmode="decimal" placeholder="lb">
+            <input type="text" id="w${i}_${s}" value="${w}" inputmode="decimal" placeholder="lb" onblur="copyForward(${i},${s})">
             <button type="button" class="step" onclick="stepWeight(${i},${s},1)">+</button>
             <button type="button" class="tiny bw${bwOn}" id="bw${i}_${s}" onclick="setBW(${i},${s})">BW</button>
           </div>
@@ -911,6 +935,7 @@ function renderWorkout(){
             <button type="button" class="painbtn${pain==='0'?' selected':''}" onclick="setPain(${i},${s},'0',this)">No</button>
             <button type="button" class="painbtn${pain==='1'?' selected':''}" onclick="setPain(${i},${s},'1',this)">Yes</button>
           </div>
+          <button type="button" class="setdone${d.done?' selected':''}" id="done${i}_${s}" onclick="completeSet(${i},${s})" aria-label="Set done">✓</button>
         </div>`;
     }
     if(trackLog){
