@@ -242,6 +242,15 @@ let workoutIv = null;
 let lastWorkoutSecs = null;
 let howOpen = [];
 let liftIndex = 0;
+let swapCursor = {};
+let trackLog = true;
+(function loadTrack(){
+  try {
+    const t = localStorage.getItem('pw_track');
+    if(t === '0') trackLog = false;
+    else if(t === '1') trackLog = true;
+  } catch(e){}
+})();
 
 function passScreen(key, val, btn){
   screen[key] = val;
@@ -538,6 +547,7 @@ function beginWorkout(selected, label){
   currentWorkout = selected;
   sessionLabel = label;
   liftIndex = 0;
+  swapCursor = {};
   setCounts = selected.map(() => 3);
   howOpen = selected.map(() => false);
   draft = selected.map(() => [{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'}]);
@@ -707,11 +717,87 @@ function clearContent(){
   document.getElementById('content').innerHTML = '';
 }
 
+function lastDaySets(ex){
+  const rows = history.filter(h => h.id === ex.id && h.id !== '_session' && h.date);
+  if(!rows.length) return [];
+  let newest = rows[0].date;
+  rows.forEach(h => { if(String(h.date) > String(newest)) newest = h.date; });
+  return rows.filter(h => h.date === newest).sort((a,b) => (Number(a.set)||0) - (Number(b.set)||0));
+}
+
 function lastLine(ex){
-  const last = history.filter(h => h.id === ex.id && h.id !== '_session').slice(-1)[0];
-  if(!last) return '';
-  const side = last.perSide && last.sideLabel ? ' ' + last.sideLabel : '';
-  return '<p class="small">Last: ' + last.weight + ' x ' + last.reps + side + ' RPE ' + (last.rpe || '?') + (last.pain ? ' PAIN' : '') + ' (' + last.date + ')</p>';
+  const day = lastDaySets(ex);
+  if(!day.length) return '';
+  const parts = [];
+  day.forEach(s => {
+    const emptyW = (s.weight === undefined || s.weight === null || s.weight === '');
+    const emptyR = (s.reps === undefined || s.reps === null || s.reps === '');
+    if(emptyW && emptyR) return;
+    parts.push(String(emptyW ? '' : s.weight) + 'x' + String(emptyR ? '' : s.reps));
+  });
+  if(!parts.length) return '';
+  const perSide = day.some(s => s.perSide);
+  let line = 'Last workout: ' + parts.join(', ');
+  if(perSide) line += ' per side';
+  line += ' (' + day[0].date + ')';
+  if(day.some(s => s.pain)) line += ' Pain noted.';
+  return '<p class="small">' + line + '</p>';
+}
+
+function toggleTrack(){
+  readDraft();
+  trackLog = !trackLog;
+  try { localStorage.setItem('pw_track', trackLog ? '1' : '0'); } catch(e){}
+  renderWorkout();
+}
+
+function swapPoolFor(i){
+  const cur = currentWorkout[i];
+  if(!cur) return [];
+  if(swapCursor[i] == null) swapCursor[i] = cur.id;
+  const originId = swapCursor[i];
+  const origin = EXERCISES.find(e => e.id === originId) || cur;
+  const locked = lockedIds();
+  const taken = new Set(currentWorkout.filter((_,j) => j !== i).map(e => e.id));
+  const cycle = [];
+  function tryAdd(id){
+    if(!id || taken.has(id) || locked.includes(id)) return;
+    if(cycle.some(e => e.id === id)) return;
+    const ex = EXERCISES.find(e => e.id === id);
+    if(ex) cycle.push(ex);
+  }
+  tryAdd(originId);
+  EXERCISES.forEach(e => {
+    if(e.cat === origin.cat || e.cat === cur.cat) tryAdd(e.id);
+  });
+  (TEMPLATE_ALTS[originId] || []).forEach(tryAdd);
+  (TEMPLATE_ALTS[cur.id] || []).forEach(tryAdd);
+  return cycle;
+}
+
+function swapLift(){
+  readDraft();
+  const i = liftIndex;
+  if(!currentWorkout[i]) return;
+  const cycle = swapPoolFor(i);
+  if(cycle.length <= 1){
+    alert('No other lift in this slot today');
+    return;
+  }
+  const curId = currentWorkout[i].id;
+  let idx = cycle.findIndex(e => e.id === curId);
+  if(idx < 0) idx = 0;
+  const next = cycle[(idx + 1) % cycle.length];
+  if(!next || next.id === curId){
+    alert('No other lift in this slot today');
+    return;
+  }
+  currentWorkout[i] = next;
+  howOpen[i] = false;
+  setCounts[i] = 3;
+  draft[i] = [{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'},{w:'',r:'',p:'',pain:'0'}];
+  try { localStorage.setItem('pw_last_ids', JSON.stringify(currentWorkout.map(e => e.id))); } catch(e){}
+  renderWorkout();
 }
 
 function goToLift(i){
@@ -745,6 +831,7 @@ function renderWorkout(){
     <h2>${sessionLabel}</h2>
     <p>Lift ${liftIndex+1} of ${total}</p>
     <p class="small">Clock is running. Log the set in front of you. Tap + Set if you do more. Tap BW if there is no load. Unilateral lifts are logged per side.</p>
+    <button type="button" class="${trackLog?'selected':'secondary'}" onclick="toggleTrack()">${trackLog?'Tracking on':'Tracking off'}</button>
     <div class="jumplist">`;
   currentWorkout.forEach((ex,i) => {
     html += `<a href="#ex${i}" class="${i===liftIndex?'on':''}" onclick="goToLift(${i});return false">${ex.name}</a>`;
@@ -754,7 +841,8 @@ function renderWorkout(){
     if(i !== liftIndex) return;
     const n = setCounts[i] || 3;
     if(!draft[i]) draft[i] = [];
-    const last = history.filter(h => h.id===ex.id && h.id !== '_session').slice(-1)[0];
+    const daySets = lastDaySets(ex);
+    const last = daySets.length ? daySets[daySets.length-1] : null;
     const sl = sideLabel(ex);
     const open = howOpen[i];
     html += `
@@ -762,6 +850,7 @@ function renderWorkout(){
         <b>${ex.name}</b> <span class="small">${ex.sets}</span>
         ${lastLine(ex)}
         <p class="small">${sideNote(ex)}</p>
+        <button type="button" class="tiny secondary" onclick="swapLift()">Swap</button>
         <button type="button" class="tiny secondary" onclick="toggleHow(${i})">How / demo</button>
         <div class="howbox${open?'':' hidden'}" id="howbox${i}">
           <div class="how"><b>How to do it</b><br>${ex.how}</div>
@@ -769,7 +858,10 @@ function renderWorkout(){
           <div class="small">Mods: ${ex.mods}</div>
           <a class="small" href="${ex.video}" target="_blank" rel="noopener">Watch demo</a>
         </div>`;
-    for(let s=0;s<n;s++){
+    if(!trackLog){
+      html += `<p class="small">Not tracking numbers this session. Tap Tracking on if you want to log.</p>`;
+    }
+    if(trackLog) for(let s=0;s<n;s++){
       const d = draft[i][s] || {};
       let w = d.w;
       let r = d.r;
@@ -810,8 +902,10 @@ function renderWorkout(){
           </div>
         </div>`;
     }
-    html += `<button type="button" class="tiny" onclick="addSet(${i})">+ Set</button>`;
-    if(n>1) html += `<button type="button" class="tiny secondary" onclick="removeSet(${i})">- Set</button>`;
+    if(trackLog){
+      html += `<button type="button" class="tiny" onclick="addSet(${i})">+ Set</button>`;
+      if(n>1) html += `<button type="button" class="tiny secondary" onclick="removeSet(${i})">- Set</button>`;
+    }
     html += `</div>`;
   });
   if(total){
@@ -832,30 +926,37 @@ function saveSession(){
   const date = new Date().toISOString().slice(0,10);
   const secs = stopWorkoutClock();
   const dur = fmtDuration(secs);
-  currentWorkout.forEach((ex,i) => {
-    const n = setCounts[i] || 3;
-    const sl = sideLabel(ex);
-    for(let s=0;s<n;s++){
-      const wEl = document.getElementById('w'+i+'_'+s);
-      const rEl = document.getElementById('r'+i+'_'+s);
-      const pEl = document.getElementById('p'+i+'_'+s);
-      const painEl = document.getElementById('pain'+i+'_'+s);
-      const d = (draft[i] && draft[i][s]) || {};
-      const w = wEl ? wEl.value : (d.w || '');
-      const r = wEl ? (rEl ? rEl.value : '') : (d.r || '');
-      const pval = wEl ? (pEl ? pEl.value : '') : (d.p || '');
-      const pain = wEl ? (painEl && painEl.value==='1') : (d.pain === '1');
-      if(w||r){
-        history.push({date, id:ex.id, name:ex.name, set:s+1, weight:w, reps:r, rpe:pval, pain, perSide:!!sl, sideLabel:sl, duration:secs});
+  if(trackLog){
+    currentWorkout.forEach((ex,i) => {
+      const n = setCounts[i] || 3;
+      const sl = sideLabel(ex);
+      for(let s=0;s<n;s++){
+        const wEl = document.getElementById('w'+i+'_'+s);
+        const rEl = document.getElementById('r'+i+'_'+s);
+        const pEl = document.getElementById('p'+i+'_'+s);
+        const painEl = document.getElementById('pain'+i+'_'+s);
+        const d = (draft[i] && draft[i][s]) || {};
+        const w = wEl ? wEl.value : (d.w || '');
+        const r = wEl ? (rEl ? rEl.value : '') : (d.r || '');
+        const pval = wEl ? (pEl ? pEl.value : '') : (d.p || '');
+        const pain = wEl ? (painEl && painEl.value==='1') : (d.pain === '1');
+        if(w||r){
+          history.push({date, id:ex.id, name:ex.name, set:s+1, weight:w, reps:r, rpe:pval, pain, perSide:!!sl, sideLabel:sl, duration:secs});
+        }
       }
-    }
-  });
+    });
+  }
   history.push({date, id:'_session', name:'Full-body session', duration:secs, elapsed:dur});
   const recent = history.filter(h => h.id !== '_session').slice(-12);
   const high = recent.filter(h => h.rpe>=8 || h.pain).length;
   localStorage.setItem('pw_history', JSON.stringify(history));
-  let msg = 'Saved. This workout took ' + dur + '. Next: add load only if RPE≤6 & no pain.';
-  if(high>=3) msg += ' Suggestion: deload 20% next session.';
+  let msg;
+  if(!trackLog){
+    msg = 'Saved. This workout took ' + dur + '. Not tracking numbers this session.';
+  } else {
+    msg = 'Saved. This workout took ' + dur + '. Next: add load only if RPE≤6 & no pain.';
+    if(high>=3) msg += ' Suggestion: deload 20% next session.';
+  }
   alert(msg);
   document.getElementById('content').innerHTML = '<div class="card"><h2>Session logged</h2><p>This workout took <b>' + dur + '</b>.</p></div>';
 }
