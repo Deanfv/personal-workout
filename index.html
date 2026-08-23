@@ -158,17 +158,17 @@ const EXERCISES = [
     how:'Hold one KB or DB at your side like a suitcase. Pack the shoulder, stand tall, and walk. Do not lean away from or into the weight — ribs stacked over pelvis. Tour players use this as anti-lateral-flexion work, the same brace that keeps posture in transition.',
     cues:'Tall posture. Core braced. Walk controlled. Don’t lean.',
     mods:'Shorter distance. Lighter. March in place.',
-    sets:'3x20-40m/side', video:'https://www.youtube.com/watch?v=w76_JnzMfXM'},
+    sets:'3x40-80 steps/side', video:'https://www.youtube.com/watch?v=w76_JnzMfXM'},
   {id:'farmer', name:'Farmer Carry', cat:'carry',
     how:'Heavy DB or KB in each hand. Stand tall, shoulders packed, grip hard, and walk with even, quiet steps. This is the simplest high-value loaded carry for grip, posture, and work capacity — all of which show up late on Sunday.',
     cues:'Shoulders packed. Even steps. Grip hard. Eyes level.',
     mods:'Shorter walk. Lighter. Suitcase if one side is cranky.',
-    sets:'3x30-50m', video:'https://www.youtube.com/watch?v=1uOs1hP3u4A'},
+    sets:'3x40-80 steps', video:'https://www.youtube.com/watch?v=1uOs1hP3u4A'},
   {id:'rack_carry', name:'KB Rack Carry', cat:'carry',
     how:'Clean one or two KBs into the front rack (bells resting on the forearms, fists under the chin). Walk tall without letting the ribs flare. The rack position trains the anterior core and posture you need to stay in flexion/extension balance through the swing.',
     cues:'Ribs down. Elbows in. Tall walk. Don’t let the bells pull you forward.',
     mods:'Single-arm rack. Lighter. Farmer carry instead.',
-    sets:'3x20-40m', video:'https://www.youtube.com/watch?v=1dLIbeNcsOM'},
+    sets:'3x40-80 steps', video:'https://www.youtube.com/watch?v=1dLIbeNcsOM'},
   {id:'row', name:'Single-Arm DB Row', cat:'pull',
     how:'Hinge and support one hand on a bench. Let the working arm hang, then pull the elbow to the hip and squeeze the shoulder blade back and down. Lower under control. Neutral spine. Posterior-chain pulling keeps the trail-side scapula honest and protects the lead shoulder.',
     cues:'Hinge support. Pull elbow to hip. Squeeze back. Don’t shrug.',
@@ -612,7 +612,17 @@ function fmtDuration(secs){
   return m + ' min ' + s + ' sec';
 }
 
+function isCarry(ex){
+  return ex && (ex.cat === 'carry' || /steps/i.test(ex.sets || ''));
+}
+
+function countWord(ex){
+  return isCarry(ex) ? 'Steps' : 'Reps';
+}
+
 function sideNote(ex){
+  if(isCarry(ex) && /\/side/.test(ex.sets)) return 'Log steps per side, not total. 40/side means 40 steps on the right and 40 on the left.';
+  if(isCarry(ex)) return 'Log steps each set, not reps.';
   if(/\/side/.test(ex.sets)) return 'Log reps per side, not total. 10/side × 3 sets = 60 total.';
   if(/\/dir/.test(ex.sets)) return 'Log reps per direction, not total.';
   return 'Log each set. Weight can be a number or BW for bodyweight.';
@@ -738,6 +748,7 @@ function lastLine(ex){
   if(!parts.length) return '';
   const perSide = day.some(s => s.perSide);
   let line = 'Last workout: ' + parts.join(', ');
+  if(isCarry(ex)) line += ' steps';
   if(perSide) line += ' per side';
   line += ' (' + day[0].date + ')';
   if(day.some(s => s.pain)) line += ' Pain noted.';
@@ -885,7 +896,7 @@ function renderWorkout(){
             <button type="button" class="tiny bw${bwOn}" id="bw${i}_${s}" onclick="setBW(${i},${s})">BW</button>
           </div>
           <div class="stepper">
-            <span class="slbl">Reps${sl?' '+sl:''}</span>
+            <span class="slbl">${countWord(ex)}${sl?' '+sl:''}</span>
             <button type="button" class="step" onclick="stepReps(${i},${s},-1)">-</button>
             <input type="number" id="r${i}_${s}" value="${r||''}">
             <button type="button" class="step" onclick="stepReps(${i},${s},1)">+</button>
