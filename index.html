@@ -229,7 +229,12 @@ const EXERCISES = [
     how:'Press or hold a light KB overhead. Turn the feet about 45° away from the bell, soft knee on the same side as the free hand. Push the hip under the bell and slide the free hand down the leg, eyes on the bell. Stand by driving the hip back under. Advanced T-spine and hip mobility — keep it light.',
     cues:'Soft knee. Hip under the bell. Look at the bell. Slow.',
     mods:'Bodyweight. Reduced ROM. Locked if overhead screen is limited.',
-    sets:'2-3x5-6/side', video:'https://www.youtube.com/watch?v=ITSmgn_BQgY'}
+    sets:'2-3x5-6/side', video:'https://www.youtube.com/watch?v=ITSmgn_BQgY'},
+  {id:'pullup', name:'Pull-Up', cat:'pull',
+    how:'Hang from a bar, hands about shoulder-width, palms away. Pack the shoulders. Do not shrug into your ears. Pull the chest to the bar until the chin is over, then lower under control to a full hang. Legs quiet. If a full rep is not there yet, use a band or jump to the top and lower slow.',
+    cues:'Pack shoulders. Chest to the bar. Full hang at the bottom. No kip.',
+    mods:'Band. Jump to the top, slow lower. Inverted row. Dead hang holds.',
+    sets:'3x4-8', video:'https://www.youtube.com/watch?v=eGo4IYlbE5g'}
 ];
 
 let screen = {balance:null, overhead:null, hinge:null};
@@ -521,7 +526,7 @@ let sessionLabel = 'Workout';
 function lockedIds(){
   const locked = [];
   if(!screen.balance) locked.push('slrdl','stepup','swing','bulgarian','lateral_lunge');
-  if(!screen.overhead) locked.push('hkpress','windmill','tgu_half','swing');
+  if(!screen.overhead) locked.push('hkpress','windmill','tgu_half','swing','pullup');
   if(!screen.hinge) locked.push('rdl','slrdl','swing','windmill');
   return locked;
 }
