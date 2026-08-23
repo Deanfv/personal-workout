@@ -105,9 +105,9 @@ button.bw.on{background:#16a34a}
     <button onclick="startWarmup('full')">Stretch (12 min)</button>
     <button onclick="startWarmup('long')">Stretch (18 min)</button>
     <button onclick="startTemplate('A')">Workout A</button>
-    <p class="small">Squat, RDL, press, row, suitcase, reverse lunge, chop, Pallof. Same lifts every A day.</p>
+    <p class="small">Squat, RDL, press, row, pull-up, bar hang, suitcase, reverse lunge, chop, Pallof. Same lifts every A day.</p>
     <button onclick="startTemplate('B')">Workout B</button>
-    <p class="small">Offset squat, single-leg RDL, floor press, row, farmer, lateral lunge, lift, swing. Same lifts every B day.</p>
+    <p class="small">Offset squat, single-leg RDL, floor press, row, pull-up, bar hang, farmer, lateral lunge, lift, swing. Same lifts every B day.</p>
     <button class="secondary" onclick="startLast()">Same as last</button>
     <button class="secondary" onclick="showHistory()">History &amp; Progress</button>
     <button class="secondary" onclick="showSelfVideo()">Self-video (optional)</button>
@@ -236,7 +236,12 @@ const EXERCISES = [
     how:'Hang from a bar, hands about shoulder-width, palms away. Pack the shoulders. Do not shrug into your ears. Pull the chest to the bar until the chin is over, then lower under control to a full hang. Legs quiet. If a full rep is not there yet, use a band or jump to the top and lower slow.',
     cues:'Pack shoulders. Chest to the bar. Full hang at the bottom. No kip.',
     mods:'Band. Jump to the top, slow lower. Inverted row. Dead hang holds.',
-    sets:'3x4-8', video:'https://www.youtube.com/watch?v=eGo4IYlbE5g'}
+    sets:'3x4-8', video:'https://www.youtube.com/watch?v=eGo4IYlbE5g'},
+  {id:'hang', name:'Bar Hang', cat:'pull',
+    how:'Dead hang from a bar, palms away or toward you. Pack the shoulders down (do not shrug). Ribs stacked, legs quiet. Breathe. This is a timed hold for grip and shoulder packing, not a swing. Come off the bar if the shoulders start to dump.',
+    cues:'Shoulders packed. Quiet body. Breathe. Stop if you dump.',
+    mods:'Shorter hold. One foot on a box. Neutral grip if the bar allows.',
+    sets:'3x20-40s', video:'https://www.youtube.com/watch?v=dOCQjaasbGs'}
 ];
 
 let screen = {balance:null, overhead:null, hinge:null};
@@ -510,8 +515,8 @@ function runTimer(secs, id, onDone){
   },1000);
 }
 
-const TEMPLATE_A = ['goblet','rdl','hkpress','row','suitcase','reverse_lunge','chop','pallof'];
-const TEMPLATE_B = ['offset_squat','slrdl','floorpress','row','farmer','lateral_lunge','lift','swing'];
+const TEMPLATE_A = ['goblet','rdl','hkpress','row','pullup','hang','suitcase','reverse_lunge','chop','pallof'];
+const TEMPLATE_B = ['offset_squat','slrdl','floorpress','row','pullup','hang','farmer','lateral_lunge','lift','swing'];
 const TEMPLATE_ALTS = {
   rdl: ['hipthrust','goblet'],
   slrdl: ['rdl','reverse_lunge','hipthrust'],
@@ -519,6 +524,9 @@ const TEMPLATE_ALTS = {
   hkpress: ['floorpress'],
   windmill: ['halo'],
   tgu_half: ['deadbug','halo'],
+  row: ['pullup','hang'],
+  pullup: ['row','hang'],
+  hang: ['pullup','row'],
   bulgarian: ['reverse_lunge'],
   stepup: ['reverse_lunge'],
   lateral_lunge: ['reverse_lunge','stepup']
@@ -529,7 +537,7 @@ let sessionLabel = 'Workout';
 function lockedIds(){
   const locked = [];
   if(!screen.balance) locked.push('slrdl','stepup','swing','bulgarian','lateral_lunge');
-  if(!screen.overhead) locked.push('hkpress','windmill','tgu_half','swing','pullup');
+  if(!screen.overhead) locked.push('hkpress','windmill','tgu_half','swing','pullup','hang');
   if(!screen.hinge) locked.push('rdl','slrdl','swing','windmill');
   return locked;
 }
@@ -626,11 +634,18 @@ function isCarry(ex){
   return ex && (ex.cat === 'carry' || /steps/i.test(ex.sets || ''));
 }
 
+function isTimed(ex){
+  return ex && (ex.id === 'hang' || /\d+s\b/i.test(ex.sets || ''));
+}
+
 function countWord(ex){
-  return isCarry(ex) ? 'Steps' : 'Reps';
+  if(isTimed(ex)) return 'Sec';
+  if(isCarry(ex)) return 'Steps';
+  return 'Reps';
 }
 
 function sideNote(ex){
+  if(isTimed(ex)) return 'Log seconds each set. Weight is BW unless you add a belt.';
   if(isCarry(ex) && /\/side/.test(ex.sets)) return 'Log steps per side, not total. 40/side means 40 steps on the right and 40 on the left.';
   if(isCarry(ex)) return 'Log steps each set, not reps.';
   if(/\/side/.test(ex.sets)) return 'Log reps per side, not total. 10/side × 3 sets = 60 total.';
@@ -817,6 +832,7 @@ function lastLine(ex){
   if(!parts.length) return '';
   const perSide = day.some(s => s.perSide);
   let line = 'Last workout: ' + parts.join(', ');
+  if(isTimed(ex)) line += ' sec';
   if(isCarry(ex)) line += ' steps';
   if(perSide) line += ' per side';
   line += ' (' + day[0].date + ')';
@@ -952,6 +968,7 @@ function renderWorkout(){
       let pval = d.p;
       let pain = (d.pain === '0' || d.pain === '1') ? d.pain : '';
       if(w===undefined || w===null) w = '';
+      if(s===0 && w==='' && (ex.id==='hang' || ex.id==='pullup')) w = 'BW';
       if(s===0 && w==='' && last && last.weight){
         w = (last.rpe<=6 && !last.pain && last.weight !== 'BW' && !isNaN(parseFloat(last.weight))) ? (parseFloat(last.weight)+2.5) : last.weight;
         if(r==='') r = last.reps || '';
