@@ -975,7 +975,7 @@ function renderWorkout(){
     const open = howOpen[i];
     html += `
       <div class="card excard" id="ex${i}">
-        <b>${ex.name}</b> <span class="small">${ex.sets}</span>
+        <b>${ex.name}</b> <span class="small">${formatSets(ex, setCounts[i] || PWLogic.labPlan(labMarkers).setCount)}</span>
         ${lastLine(ex)}
         <p class="small">${sideNote(ex)}</p>
         <button type="button" class="tiny secondary" onclick="swapLift()">Swap</button>
@@ -1237,6 +1237,10 @@ function loadLabs(){
 
 function saveLabs(){
   try { localStorage.setItem('pw_labs', JSON.stringify(labMarkers)); } catch(e){}
+}
+
+function formatSets(ex, n){
+  return PWLogic.formatSetsLabel(ex && ex.sets, n);
 }
 
 function labBannerHtml(){

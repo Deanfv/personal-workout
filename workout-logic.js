@@ -303,6 +303,12 @@
     return uniq(lockedIdsFromScreen(screen).concat(labPlan(markers).extraLocks));
   }
 
+  function formatSetsLabel(raw, n) {
+    raw = raw || (n + ' sets');
+    if (!n || n === 3) return raw;
+    return String(raw).replace(/^\d+(-\d+)?x/, n + 'x');
+  }
+
   return {
     SCREEN_KEYS: SCREEN_KEYS,
     isFailedScreen: isFailedScreen,
@@ -314,6 +320,7 @@
     labPlan: labPlan,
     applyLoadScale: applyLoadScale,
     lockedIdsWithLabs: lockedIdsWithLabs,
-    findMarker: findMarker
+    findMarker: findMarker,
+    formatSetsLabel: formatSetsLabel
   };
 });

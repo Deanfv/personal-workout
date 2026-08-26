@@ -100,4 +100,8 @@ assert.ok(!L.findMarker(a1cOnly.markers, 'hemoglobin'), 'A1c must not count as h
 assert.ok(L.findMarker(a1cOnly.markers, 'a1c'));
 assert.strictEqual(L.labPlan(a1cOnly.markers).loadScale, 1);
 
+assert.strictEqual(L.formatSetsLabel('3x6-8/side', 2), '2x6-8/side');
+assert.strictEqual(L.formatSetsLabel('2-3x3-5/side', 2), '2x3-5/side');
+assert.strictEqual(L.formatSetsLabel('3x8-12', 3), '3x8-12');
+
 console.log('workout-logic tests passed');
