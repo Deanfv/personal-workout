@@ -63,8 +63,6 @@ button.setdone{width:48px;min-height:48px;padding:0;margin:0;font-size:1.2rem;fl
 button.tiny{width:auto;display:inline-block;padding:8px 12px;margin:8px 6px 0 0;font-size:0.9rem}
 button.bw{background:#334155;min-height:48px;margin:0}
 button.bw.on{background:#16a34a}
-textarea{width:100%;min-height:130px;background:#0f172a;border:1px solid #475569;color:#e2e8f0;padding:8px;border-radius:6px;font-size:0.9rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.labnote{background:#0f172a;border:1px solid #0369a1;border-radius:8px;padding:8px;margin:8px 0;font-size:0.85rem;color:#7dd3fc}
 #startBtn{position:sticky;bottom:8px;z-index:6}
 #startBtn[hidden],#startBtn.hidden{display:none}
 </style>
@@ -117,19 +115,11 @@ textarea{width:100%;min-height:130px;background:#0f172a;border:1px solid #475569
     <button class="secondary" onclick="showHistory()">History &amp; Progress</button>
     <button class="secondary" onclick="showSelfVideo()">Self-video (optional)</button>
     <button class="secondary" onclick="redoSelfScreen()">Redo self-screen</button>
-    <div id="labsCard" class="card">
-      <h2>Function Health labs</h2>
-      <p class="small">Function Health has no public API this static page can call. Do not paste a password. Export or copy markers from <a href="https://my.functionhealth.com/" target="_blank" rel="noopener">your Function Health dashboard</a>, then paste JSON or lines like <code>Ferritin: 28 ng/mL</code>.</p>
-      <div id="labStatus" class="labnote">No labs imported yet. Workouts use the template as-is.</div>
-      <textarea id="labPaste" placeholder='{"Ferritin":28,"hs-CRP":1.2,"Vitamin D":32}'></textarea>
-      <button type="button" onclick="importLabs()">Import labs into this workout</button>
-      <button type="button" class="secondary" onclick="clearLabs()">Clear labs</button>
-    </div>
     <div id="content"></div>
   </div>
 </div>
 
-<script src="workout-logic.js?v=20260826"></script>
+<script src="workout-logic.js?v=20260826b"></script>
 <script>
 const EXERCISES = [
   {id:'goblet', name:'Goblet Squat', cat:'squat',
@@ -260,7 +250,6 @@ const EXERCISES = [
 ];
 
 let screen = {balance:null, overhead:null, hinge:null, skipped:false};
-let labMarkers = [];
 let history = [];
 try { history = JSON.parse(localStorage.getItem('pw_history') || localStorage.getItem('silo_history') || '[]'); } catch(e){ history = []; }
 if(!Array.isArray(history)) history = [];
@@ -318,7 +307,6 @@ function startApp(){
   try { localStorage.setItem('pw_screen', JSON.stringify(screen)); } catch(e){}
   document.getElementById('onboard').classList.add('hidden');
   document.getElementById('main').classList.remove('hidden');
-  renderLabStatus();
 }
 
 function skipSelfScreen(){
@@ -577,7 +565,7 @@ const TEMPLATE_ALTS = {
 let sessionLabel = 'Workout';
 
 function lockedIds(){
-  return PWLogic.lockedIdsWithLabs(screen, labMarkers);
+  return PWLogic.lockedIdsFromScreen(screen);
 }
 
 function resolveTemplate(ids){
@@ -591,8 +579,7 @@ function beginWorkout(selected, label){
   sessionLabel = label;
   liftIndex = 0;
   swapCursor = {};
-  const plan = PWLogic.labPlan(labMarkers);
-  setCounts = selected.map(() => plan.setCount);
+  setCounts = selected.map(() => 3);
   howOpen = selected.map(() => false);
   liftDone = selected.map(() => false);
   draft = selected.map(() => [{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false}]);
@@ -918,7 +905,7 @@ function swapLift(){
   currentWorkout[i] = next;
   howOpen[i] = false;
   liftDone[i] = false;
-  setCounts[i] = PWLogic.labPlan(labMarkers).setCount;
+  setCounts[i] = 3;
   draft[i] = [{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false}];
   try { localStorage.setItem('pw_last_ids', JSON.stringify(currentWorkout.map(e => e.id))); } catch(e){}
   renderWorkout();
@@ -959,7 +946,6 @@ function renderWorkout(){
     <p>Lift ${liftIndex+1} of ${total}</p>
     <p class="small">Clock is running. Log the set in front of you. Tap + Set if you do more. Tap BW if there is no load. Unilateral lifts are logged per side.</p>
     <button type="button" class="${trackLog?'selected':'secondary'}" onclick="toggleTrack()">${trackLog?'Tracking on':'Tracking off'}</button>
-    ${labBannerHtml()}
     <div class="jumplist">`;
   currentWorkout.forEach((ex,i) => {
     html += `<a href="#ex${i}" class="${i===liftIndex?'on':''}${liftDone[i]?' did':''}" onclick="goToLift(${i});return false">${ex.name}</a>`;
@@ -975,7 +961,7 @@ function renderWorkout(){
     const open = howOpen[i];
     html += `
       <div class="card excard" id="ex${i}">
-        <b>${ex.name}</b> <span class="small">${formatSets(ex, setCounts[i] || PWLogic.labPlan(labMarkers).setCount)}</span>
+        <b>${ex.name}</b> <span class="small">${ex.sets}</span>
         ${lastLine(ex)}
         <p class="small">${sideNote(ex)}</p>
         <button type="button" class="tiny secondary" onclick="swapLift()">Swap</button>
@@ -999,7 +985,6 @@ function renderWorkout(){
       if(s===0 && w==='' && (ex.id==='hang' || ex.id==='pullup')) w = 'BW';
       if(s===0 && w==='' && last && last.weight){
         w = (last.rpe<=6 && !last.pain && last.weight !== 'BW' && !isNaN(parseFloat(last.weight))) ? (parseFloat(last.weight)+2.5) : last.weight;
-        w = PWLogic.applyLoadScale(w, PWLogic.labPlan(labMarkers).loadScale);
         if(r==='') r = last.reps || '';
         if(pval==='') pval = last.rpe || '';
       }
@@ -1226,69 +1211,7 @@ function stopCam(){
   if(v) v.srcObject = null;
 }
 
-function loadLabs(){
-  try {
-    const raw = localStorage.getItem('pw_labs');
-    if(!raw) return;
-    const parsed = JSON.parse(raw);
-    labMarkers = Array.isArray(parsed) ? parsed : [];
-  } catch(e){ labMarkers = []; }
-}
-
-function saveLabs(){
-  try { localStorage.setItem('pw_labs', JSON.stringify(labMarkers)); } catch(e){}
-}
-
-function formatSets(ex, n){
-  return PWLogic.formatSetsLabel(ex && ex.sets, n);
-}
-
-function labBannerHtml(){
-  const plan = PWLogic.labPlan(labMarkers);
-  if(!labMarkers.length) return '';
-  const bits = ['Labs in session: load ×' + plan.loadScale + ', ' + plan.setCount + ' sets default.'];
-  if(plan.notes.length) bits.push(plan.notes.join(' '));
-  bits.push('Not medical advice.');
-  return '<div class="labnote">' + bits.join(' ') + '</div>';
-}
-
-function renderLabStatus(){
-  const el = document.getElementById('labStatus');
-  if(!el) return;
-  const plan = PWLogic.labPlan(labMarkers);
-  if(!labMarkers.length){
-    el.textContent = 'No labs imported yet. Workouts use the template as-is.';
-    return;
-  }
-  const names = labMarkers.map(m => m.name + ' ' + m.value + (m.unit ? ' ' + m.unit : '')).join(', ');
-  el.innerHTML = '<b>' + labMarkers.length + ' markers stored on this phone.</b> ' + names +
-    (plan.notes.length ? '<br>' + plan.notes.join('<br>') : '<br>Values are in typical ranges for this program — no deload.') +
-    '<br>Load scale ' + plan.loadScale + '. Default sets ' + plan.setCount + '. Not medical advice.';
-}
-
-function importLabs(){
-  const box = document.getElementById('labPaste');
-  const parsed = PWLogic.parseLabImport(box ? box.value : '');
-  if(parsed.error){
-    alert(parsed.error);
-    return;
-  }
-  labMarkers = parsed.markers;
-  saveLabs();
-  renderLabStatus();
-  const plan = PWLogic.labPlan(labMarkers);
-  alert('Imported ' + labMarkers.length + ' markers. Load scale ' + plan.loadScale + '. Next Workout A/B will use this.');
-}
-
-function clearLabs(){
-  labMarkers = [];
-  saveLabs();
-  const box = document.getElementById('labPaste');
-  if(box) box.value = '';
-  renderLabStatus();
-}
-
-loadLabs();
+try { localStorage.removeItem('pw_labs'); } catch(e){}
 try {
   const saved = localStorage.getItem('pw_screen') || localStorage.getItem('silo_screen');
   if(saved){
