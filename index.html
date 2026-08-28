@@ -23,7 +23,9 @@ button.ready{background:#16a34a}
 .ex{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #334155}
 input,select{background:#0f172a;border:1px solid #475569;color:#e2e8f0;padding:8px;border-radius:6px;width:70px;font-size:1rem}
 label{font-size:0.9rem;color:#94a3b8}
-.small{font-size:0.85rem;color:#64748b}
+.small{font-size:0.85rem;color:#cbd5e1}
+.lastline{color:#f1f5f9}
+a.small{color:#38bdf8}
 .hidden{display:none}
 #screen{min-height:100vh}
 .timer{font-size:2rem;text-align:center;margin:12px 0}
@@ -845,7 +847,7 @@ function lastLine(ex){
   if(perSide) line += ' per side';
   line += ' (' + day[0].date + ')';
   if(day.some(s => s.pain)) line += ' Pain noted.';
-  return '<p class="small">' + line + '</p>';
+  return '<p class="small lastline">' + line + '</p>';
 }
 
 function toggleTrack(){
