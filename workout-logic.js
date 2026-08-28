@@ -7,10 +7,13 @@
   var SCREEN_KEYS = ['balance', 'overhead', 'hinge'];
 
   var LOCKS = {
-    balance: ['slrdl', 'stepup', 'swing', 'bulgarian', 'lateral_lunge'],
-    overhead: ['hkpress', 'windmill', 'tgu_half', 'swing', 'pullup', 'hang'],
-    hinge: ['rdl', 'slrdl', 'swing', 'windmill']
+    balance: ['slrdl', 'stepup', 'swing', 'swing_1a', 'bulgarian', 'lateral_lunge'],
+    overhead: ['hkpress', 'windmill', 'tgu_half', 'swing', 'swing_1a', 'pullup', 'hang'],
+    hinge: ['rdl', 'slrdl', 'swing', 'swing_1a', 'windmill']
   };
+
+  // Workout B swing slot: two-hand Russian, one-arm Russian, windmill, half get-up.
+  var SWING_SWAP = ['swing', 'swing_1a', 'windmill', 'tgu_half'];
 
   function uniq(list) {
     var out = [];
@@ -64,12 +67,42 @@
     return out;
   }
 
+  function swapPoolIds(originId, currentId, locked, taken, alts, exercises) {
+    locked = locked || [];
+    taken = taken || [];
+    alts = alts || {};
+    exercises = exercises || [];
+    var byId = {};
+    exercises.forEach(function (e) { byId[e.id] = e; });
+    var origin = byId[originId] || byId[currentId];
+    var current = byId[currentId] || origin;
+    var cycle = [];
+    function tryAdd(id) {
+      if (!id || taken.indexOf(id) !== -1 || locked.indexOf(id) !== -1) return;
+      if (cycle.indexOf(id) !== -1) return;
+      if (byId[id]) cycle.push(id);
+    }
+    tryAdd(originId);
+    if (SWING_SWAP.indexOf(originId) !== -1) {
+      SWING_SWAP.forEach(tryAdd);
+      return cycle;
+    }
+    exercises.forEach(function (e) {
+      if (origin && current && (e.cat === origin.cat || e.cat === current.cat)) tryAdd(e.id);
+    });
+    (alts[originId] || []).forEach(tryAdd);
+    (alts[currentId] || []).forEach(tryAdd);
+    return cycle;
+  }
+
   return {
     SCREEN_KEYS: SCREEN_KEYS,
+    SWING_SWAP: SWING_SWAP,
     isFailedScreen: isFailedScreen,
     isAnsweredScreen: isAnsweredScreen,
     screenComplete: screenComplete,
     lockedIdsFromScreen: lockedIdsFromScreen,
-    resolveTemplateIds: resolveTemplateIds
+    resolveTemplateIds: resolveTemplateIds,
+    swapPoolIds: swapPoolIds
   };
 });

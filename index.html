@@ -23,7 +23,9 @@ button.ready{background:#16a34a}
 .ex{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #334155}
 input,select{background:#0f172a;border:1px solid #475569;color:#e2e8f0;padding:8px;border-radius:6px;width:70px;font-size:1rem}
 label{font-size:0.9rem;color:#94a3b8}
-.small{font-size:0.85rem;color:#64748b}
+.small{font-size:0.85rem;color:#cbd5e1}
+.lastline{color:#f1f5f9}
+a.small{color:#38bdf8}
 .hidden{display:none}
 #screen{min-height:100vh}
 .timer{font-size:2rem;text-align:center;margin:12px 0}
@@ -45,9 +47,7 @@ a{color:#38bdf8}
 .stepper{display:flex;align-items:center;gap:6px}
 .slbl{font-size:0.85rem;color:#94a3b8;min-width:44px;flex:0 0 auto}
 button.step{width:48px;min-width:48px;min-height:48px;padding:0;margin:0;font-size:1.4rem;flex:0 0 48px}
-button.painbtn{flex:1;min-height:48px;margin:0;width:auto}
 button.setdone{width:48px;min-height:48px;padding:0;margin:0;font-size:1.2rem;flex:0 0 48px}
-.painrow{display:flex;align-items:center;gap:8px}
 .jumplist{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .jumplist a{display:inline-block;background:#1e293b;border:1px solid #334155;padding:8px 10px;border-radius:8px;font-size:0.85rem;text-decoration:none;color:#e2e8f0}
 .jumplist a.on{background:#0284c7;border-color:#0284c7;color:#fff}
@@ -119,7 +119,7 @@ button.bw.on{background:#16a34a}
   </div>
 </div>
 
-<script src="workout-logic.js?v=20260826b"></script>
+<script src="workout-logic.js?v=20260827a"></script>
 <script>
 const EXERCISES = [
   {id:'goblet', name:'Goblet Squat', cat:'squat',
@@ -222,6 +222,11 @@ const EXERCISES = [
     cues:'Hinge hard. Snap hips. Arms loose. Chest height only.',
     mods:'Light. Hinge practice first. Locked if balance or overhead screen fails.',
     sets:'3x10-15', video:'https://www.youtube.com/watch?v=jRhW6kOYNF8'},
+  {id:'swing_1a', name:'One-Arm Russian KB Swing', cat:'hinge',
+    how:'Same hip-hinge snap as the two-hand Russian swing, one hand on the horn. Hike the bell back through the legs, then explosively stand so the bell floats to chest height — not overhead. Keep the shoulders square; do not let the working side yank you into rotation. The free arm can track the bell. Stay light — this is form first, not a heavier swing. Switch sides each set. Same hip-power transfer to clubhead speed, plus a little anti-rotation for the trail side.',
+    cues:'Hinge hard. Snap hips. Stay square. Chest height only. Light bell.',
+    mods:'Two-hand swing first. Very light. Hinge practice. Locked if balance or hinge screen fails.',
+    sets:'3x8-10/side', video:'https://www.youtube.com/watch?v=dAnl36lJQow'},
   {id:'halo', name:'KB Halo', cat:'mobility',
     how:'Hold the KB by the horns at chin height. Circle it slowly around the head, keeping the head still and the ribs down. Reverse direction. Soft elbows. This opens thoracic rotation and the shoulders — the mobility tour players chase so the arms can stay connected without the low back compensating.',
     cues:'Circle slow around the head. Core tight. Elbows soft. Head still.',
@@ -550,10 +555,11 @@ const TEMPLATE_B = ['offset_squat','slrdl','floorpress','row','pullup','hang','f
 const TEMPLATE_ALTS = {
   rdl: ['hipthrust','goblet'],
   slrdl: ['rdl','reverse_lunge','hipthrust'],
-  swing: ['hipthrust','rdl'],
+  swing: ['hipthrust','rdl','swing_1a','windmill','tgu_half'],
+  swing_1a: ['swing','windmill','tgu_half'],
   hkpress: ['floorpress'],
-  windmill: ['halo'],
-  tgu_half: ['deadbug','halo'],
+  windmill: ['halo','swing','swing_1a','tgu_half'],
+  tgu_half: ['deadbug','halo','swing','swing_1a','windmill'],
   row: ['pullup','hang'],
   pullup: ['row','hang'],
   hang: ['pullup','row'],
@@ -582,7 +588,7 @@ function beginWorkout(selected, label){
   setCounts = selected.map(() => 3);
   howOpen = selected.map(() => false);
   liftDone = selected.map(() => false);
-  draft = selected.map(() => [{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false}]);
+  draft = selected.map(() => [{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false}]);
   localStorage.setItem('pw_last_ids', JSON.stringify(selected.map(e => e.id)));
   localStorage.setItem('pw_last_label', label);
   startWorkoutClock();
@@ -685,7 +691,6 @@ function readDraft(){
         w: wEl.value || '',
         r: (document.getElementById('r'+i+'_'+s)||{}).value || '',
         p: (document.getElementById('p'+i+'_'+s)||{}).value || '',
-        pain: (document.getElementById('pain'+i+'_'+s)||{}).value || '',
         done: !!(doneBtn && doneBtn.classList.contains('selected'))
       };
     }
@@ -696,7 +701,7 @@ function addSet(i){
   readDraft();
   setCounts[i] = (setCounts[i] || 3) + 1;
   if(!draft[i]) draft[i] = [];
-  draft[i].push({w:'',r:'',p:'',pain:'',done:false});
+  draft[i].push({w:'',r:'',p:'',done:false});
   renderWorkout();
 }
 
@@ -797,15 +802,6 @@ function stepReps(i,s,dir){
   el.value = String(Math.max(0, base + dir));
 }
 
-function setPain(i,s,val,btn){
-  const el = document.getElementById('pain'+i+'_'+s);
-  if(el) el.value = val;
-  const row = btn.parentElement;
-  if(!row) return;
-  row.querySelectorAll('.painbtn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-}
-
 function toggleHow(i){
   const el = document.getElementById('howbox'+i);
   if(!el) return;
@@ -851,7 +847,7 @@ function lastLine(ex){
   if(perSide) line += ' per side';
   line += ' (' + day[0].date + ')';
   if(day.some(s => s.pain)) line += ' Pain noted.';
-  return '<p class="small">' + line + '</p>';
+  return '<p class="small lastline">' + line + '</p>';
 }
 
 function toggleTrack(){
@@ -866,23 +862,10 @@ function swapPoolFor(i){
   if(!cur) return [];
   if(swapCursor[i] == null) swapCursor[i] = cur.id;
   const originId = swapCursor[i];
-  const origin = EXERCISES.find(e => e.id === originId) || cur;
   const locked = lockedIds();
-  const taken = new Set(currentWorkout.filter((_,j) => j !== i).map(e => e.id));
-  const cycle = [];
-  function tryAdd(id){
-    if(!id || taken.has(id) || locked.includes(id)) return;
-    if(cycle.some(e => e.id === id)) return;
-    const ex = EXERCISES.find(e => e.id === id);
-    if(ex) cycle.push(ex);
-  }
-  tryAdd(originId);
-  EXERCISES.forEach(e => {
-    if(e.cat === origin.cat || e.cat === cur.cat) tryAdd(e.id);
-  });
-  (TEMPLATE_ALTS[originId] || []).forEach(tryAdd);
-  (TEMPLATE_ALTS[cur.id] || []).forEach(tryAdd);
-  return cycle;
+  const taken = currentWorkout.filter((_,j) => j !== i).map(e => e.id);
+  const ids = PWLogic.swapPoolIds(originId, cur.id, locked, taken, TEMPLATE_ALTS, EXERCISES);
+  return ids.map(id => EXERCISES.find(e => e.id === id)).filter(Boolean);
 }
 
 function swapLift(){
@@ -906,7 +889,7 @@ function swapLift(){
   howOpen[i] = false;
   liftDone[i] = false;
   setCounts[i] = 3;
-  draft[i] = [{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false}];
+  draft[i] = [{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false}];
   try { localStorage.setItem('pw_last_ids', JSON.stringify(currentWorkout.map(e => e.id))); } catch(e){}
   renderWorkout();
 }
@@ -980,7 +963,6 @@ function renderWorkout(){
       let w = d.w;
       let r = d.r;
       let pval = d.p;
-      let pain = (d.pain === '0' || d.pain === '1') ? d.pain : '';
       if(w===undefined || w===null) w = '';
       if(s===0 && w==='' && (ex.id==='hang' || ex.id==='pullup')) w = 'BW';
       if(s===0 && w==='' && last && last.weight){
@@ -1008,12 +990,6 @@ function renderWorkout(){
           <div class="stepper">
             <span class="slbl">RPE</span>
             <input type="number" id="p${i}_${s}" min="1" max="10" value="${pval||''}">
-          </div>
-          <div class="painrow">
-            <span class="slbl">Pain</span>
-            <input type="hidden" id="pain${i}_${s}" value="${pain}">
-            <button type="button" class="painbtn${pain==='0'?' selected':''}" onclick="setPain(${i},${s},'0',this)">No</button>
-            <button type="button" class="painbtn${pain==='1'?' selected':''}" onclick="setPain(${i},${s},'1',this)">Yes</button>
           </div>
           <button type="button" class="setdone${d.done?' selected':''}" id="done${i}_${s}" onclick="completeSet(${i},${s})" aria-label="Set done">✓</button>
         </div>`;
@@ -1050,14 +1026,12 @@ function saveSession(){
         const wEl = document.getElementById('w'+i+'_'+s);
         const rEl = document.getElementById('r'+i+'_'+s);
         const pEl = document.getElementById('p'+i+'_'+s);
-        const painEl = document.getElementById('pain'+i+'_'+s);
         const d = (draft[i] && draft[i][s]) || {};
         const w = wEl ? wEl.value : (d.w || '');
         const r = wEl ? (rEl ? rEl.value : '') : (d.r || '');
         const pval = wEl ? (pEl ? pEl.value : '') : (d.p || '');
-        const pain = wEl ? (painEl && painEl.value==='1') : (d.pain === '1');
         if(w||r){
-          history.push({date, id:ex.id, name:ex.name, set:s+1, weight:w, reps:r, rpe:pval, pain, perSide:!!sl, sideLabel:sl, duration:secs});
+          history.push({date, id:ex.id, name:ex.name, set:s+1, weight:w, reps:r, rpe:pval, pain:false, perSide:!!sl, sideLabel:sl, duration:secs});
         }
       }
     });
