@@ -45,9 +45,7 @@ a{color:#38bdf8}
 .stepper{display:flex;align-items:center;gap:6px}
 .slbl{font-size:0.85rem;color:#94a3b8;min-width:44px;flex:0 0 auto}
 button.step{width:48px;min-width:48px;min-height:48px;padding:0;margin:0;font-size:1.4rem;flex:0 0 48px}
-button.painbtn{flex:1;min-height:48px;margin:0;width:auto}
 button.setdone{width:48px;min-height:48px;padding:0;margin:0;font-size:1.2rem;flex:0 0 48px}
-.painrow{display:flex;align-items:center;gap:8px}
 .jumplist{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .jumplist a{display:inline-block;background:#1e293b;border:1px solid #334155;padding:8px 10px;border-radius:8px;font-size:0.85rem;text-decoration:none;color:#e2e8f0}
 .jumplist a.on{background:#0284c7;border-color:#0284c7;color:#fff}
@@ -588,7 +586,7 @@ function beginWorkout(selected, label){
   setCounts = selected.map(() => 3);
   howOpen = selected.map(() => false);
   liftDone = selected.map(() => false);
-  draft = selected.map(() => [{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false}]);
+  draft = selected.map(() => [{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false}]);
   localStorage.setItem('pw_last_ids', JSON.stringify(selected.map(e => e.id)));
   localStorage.setItem('pw_last_label', label);
   startWorkoutClock();
@@ -691,7 +689,6 @@ function readDraft(){
         w: wEl.value || '',
         r: (document.getElementById('r'+i+'_'+s)||{}).value || '',
         p: (document.getElementById('p'+i+'_'+s)||{}).value || '',
-        pain: (document.getElementById('pain'+i+'_'+s)||{}).value || '',
         done: !!(doneBtn && doneBtn.classList.contains('selected'))
       };
     }
@@ -702,7 +699,7 @@ function addSet(i){
   readDraft();
   setCounts[i] = (setCounts[i] || 3) + 1;
   if(!draft[i]) draft[i] = [];
-  draft[i].push({w:'',r:'',p:'',pain:'',done:false});
+  draft[i].push({w:'',r:'',p:'',done:false});
   renderWorkout();
 }
 
@@ -803,15 +800,6 @@ function stepReps(i,s,dir){
   el.value = String(Math.max(0, base + dir));
 }
 
-function setPain(i,s,val,btn){
-  const el = document.getElementById('pain'+i+'_'+s);
-  if(el) el.value = val;
-  const row = btn.parentElement;
-  if(!row) return;
-  row.querySelectorAll('.painbtn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-}
-
 function toggleHow(i){
   const el = document.getElementById('howbox'+i);
   if(!el) return;
@@ -899,7 +887,7 @@ function swapLift(){
   howOpen[i] = false;
   liftDone[i] = false;
   setCounts[i] = 3;
-  draft[i] = [{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false},{w:'',r:'',p:'',pain:'',done:false}];
+  draft[i] = [{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false}];
   try { localStorage.setItem('pw_last_ids', JSON.stringify(currentWorkout.map(e => e.id))); } catch(e){}
   renderWorkout();
 }
@@ -973,7 +961,6 @@ function renderWorkout(){
       let w = d.w;
       let r = d.r;
       let pval = d.p;
-      let pain = (d.pain === '0' || d.pain === '1') ? d.pain : '';
       if(w===undefined || w===null) w = '';
       if(s===0 && w==='' && (ex.id==='hang' || ex.id==='pullup')) w = 'BW';
       if(s===0 && w==='' && last && last.weight){
@@ -1001,12 +988,6 @@ function renderWorkout(){
           <div class="stepper">
             <span class="slbl">RPE</span>
             <input type="number" id="p${i}_${s}" min="1" max="10" value="${pval||''}">
-          </div>
-          <div class="painrow">
-            <span class="slbl">Pain</span>
-            <input type="hidden" id="pain${i}_${s}" value="${pain}">
-            <button type="button" class="painbtn${pain==='0'?' selected':''}" onclick="setPain(${i},${s},'0',this)">No</button>
-            <button type="button" class="painbtn${pain==='1'?' selected':''}" onclick="setPain(${i},${s},'1',this)">Yes</button>
           </div>
           <button type="button" class="setdone${d.done?' selected':''}" id="done${i}_${s}" onclick="completeSet(${i},${s})" aria-label="Set done">✓</button>
         </div>`;
@@ -1043,14 +1024,12 @@ function saveSession(){
         const wEl = document.getElementById('w'+i+'_'+s);
         const rEl = document.getElementById('r'+i+'_'+s);
         const pEl = document.getElementById('p'+i+'_'+s);
-        const painEl = document.getElementById('pain'+i+'_'+s);
         const d = (draft[i] && draft[i][s]) || {};
         const w = wEl ? wEl.value : (d.w || '');
         const r = wEl ? (rEl ? rEl.value : '') : (d.r || '');
         const pval = wEl ? (pEl ? pEl.value : '') : (d.p || '');
-        const pain = wEl ? (painEl && painEl.value==='1') : (d.pain === '1');
         if(w||r){
-          history.push({date, id:ex.id, name:ex.name, set:s+1, weight:w, reps:r, rpe:pval, pain, perSide:!!sl, sideLabel:sl, duration:secs});
+          history.push({date, id:ex.id, name:ex.name, set:s+1, weight:w, reps:r, rpe:pval, pain:false, perSide:!!sl, sideLabel:sl, duration:secs});
         }
       }
     });
