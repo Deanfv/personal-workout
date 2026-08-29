@@ -65,6 +65,8 @@ button.bw{background:#334155;min-height:48px;margin:0}
 button.bw.on{background:#16a34a}
 #startBtn{position:sticky;bottom:8px;z-index:6}
 #startBtn[hidden],#startBtn.hidden{display:none}
+.note-scrim{position:fixed;inset:0;background:#02061799;z-index:29}
+.note-pop{position:fixed;left:12px;right:12px;top:18%;max-width:456px;margin:0 auto;z-index:30;border:1px solid #475569}
 </style>
 </head>
 <body>
@@ -113,6 +115,7 @@ button.bw.on{background:#16a34a}
     <p class="small">Offset squat, single-leg RDL, floor press, row, pull-up, bar hang, farmer, lateral lunge, lift, swing. Same lifts every B day.</p>
     <button onclick="startTemplate('C')">Workout C</button>
     <p class="small">Short Pavel day. Swing, get-up, windmill, clean. Four lifts only.</p>
+    <button type="button" class="tiny secondary" onclick="showPavelNote()">What is a Pavel day?</button>
     <button class="secondary" onclick="startLast()">Same as last</button>
     <button class="secondary" onclick="showHistory()">History &amp; Progress</button>
     <button class="secondary" onclick="showSelfVideo()">Self-video (optional)</button>
@@ -120,8 +123,14 @@ button.bw.on{background:#16a34a}
     <div id="content"></div>
   </div>
 </div>
+<div id="pavelScrim" class="note-scrim hidden" onclick="hidePavelNote()"></div>
+<div id="pavelNote" class="card note-pop hidden">
+  <h2>Pavel day</h2>
+  <p>Longer rests between sets. Stop short of failure. Stay fresh — strength is a skill, not a grind.</p>
+  <button type="button" onclick="hidePavelNote()">Got it</button>
+</div>
 
-<script src="workout-logic.js?v=20260829a"></script>
+<script src="workout-logic.js?v=20260829b"></script>
 <script>
 const EXERCISES = [
   {id:'goblet', name:'Goblet Squat', cat:'squat',
@@ -276,6 +285,8 @@ let howOpen = [];
 let liftIndex = 0;
 let liftDone = [];
 let swapCursor = {};
+let hangPrimerDone = [];
+let hangPrimerRunning = false;
 let trackLog = true;
 (function loadTrack(){
   try {
@@ -598,6 +609,9 @@ function beginWorkout(selected, label){
   setCounts = selected.map(() => 3);
   howOpen = selected.map(() => false);
   liftDone = selected.map(() => false);
+  hangPrimerDone = selected.map(() => false);
+  hangPrimerRunning = false;
+  stopHangTimer();
   draft = selected.map(() => [{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false}]);
   localStorage.setItem('pw_last_ids', JSON.stringify(selected.map(e => e.id)));
   localStorage.setItem('pw_last_label', label);
@@ -898,6 +912,9 @@ function swapLift(){
   currentWorkout[i] = next;
   howOpen[i] = false;
   liftDone[i] = false;
+  hangPrimerDone[i] = next.id === 'hang';
+  hangPrimerRunning = false;
+  stopHangTimer();
   setCounts[i] = 3;
   draft[i] = [{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false}];
   try { localStorage.setItem('pw_last_ids', JSON.stringify(currentWorkout.map(e => e.id))); } catch(e){}
@@ -907,6 +924,8 @@ function swapLift(){
 function goToLift(i){
   readDraft();
   markLiftLeft(liftIndex);
+  hangPrimerRunning = false;
+  stopHangTimer();
   if(!currentWorkout.length) return;
   if(i < 0) i = 0;
   if(i >= currentWorkout.length) i = currentWorkout.length - 1;
@@ -917,6 +936,8 @@ function goToLift(i){
 function nextLift(){
   readDraft();
   markLiftLeft(liftIndex);
+  hangPrimerRunning = false;
+  stopHangTimer();
   if(liftIndex < currentWorkout.length - 1) liftIndex++;
   renderWorkout();
 }
@@ -924,8 +945,47 @@ function nextLift(){
 function prevLift(){
   readDraft();
   markLiftLeft(liftIndex);
+  hangPrimerRunning = false;
+  stopHangTimer();
   if(liftIndex > 0) liftIndex--;
   renderWorkout();
+}
+
+function showPavelNote(){
+  const note = document.getElementById('pavelNote');
+  const scrim = document.getElementById('pavelScrim');
+  if(note) note.classList.remove('hidden');
+  if(scrim) scrim.classList.remove('hidden');
+}
+
+function hidePavelNote(){
+  const note = document.getElementById('pavelNote');
+  const scrim = document.getElementById('pavelScrim');
+  if(note) note.classList.add('hidden');
+  if(scrim) scrim.classList.add('hidden');
+}
+
+function stopHangTimer(){
+  if(timerIv){ clearInterval(timerIv); timerIv = null; }
+}
+
+function needsHangPrimer(ex){
+  return PWLogic.shouldHangPrimer(sessionLabel, ex && ex.id);
+}
+
+function finishHangPrimer(){
+  hangPrimerRunning = false;
+  stopHangTimer();
+  hangPrimerDone[liftIndex] = true;
+  renderWorkout();
+}
+
+function startHangPrimer(){
+  hangPrimerRunning = true;
+  const secs = PWLogic.HANG_PRIMER_SECS;
+  const el = document.getElementById('hangtimer');
+  if(el) el.textContent = fmtTime(secs);
+  runTimer(secs, 'hangtimer', finishHangPrimer);
 }
 
 function renderWorkout(){
@@ -936,6 +996,7 @@ function renderWorkout(){
   if(liftIndex >= total) liftIndex = Math.max(0, total - 1);
   let html = `<div class="wok-clock"><div class="l">Session clock</div><div class="t" id="wokclock">${live}</div></div>
     <h2>${sessionLabel}</h2>
+    ${sessionLabel === 'Workout C' ? '<button type="button" class="tiny secondary" onclick="showPavelNote()">What is a Pavel day?</button>' : ''}
     <p>Lift ${liftIndex+1} of ${total}</p>
     <p class="small">Clock is running. Log the set in front of you. Tap + Set if you do more. Tap BW if there is no load. Unilateral lifts are logged per side.</p>
     <button type="button" class="${trackLog?'selected':'secondary'}" onclick="toggleTrack()">${trackLog?'Tracking on':'Tracking off'}</button>
@@ -965,10 +1026,22 @@ function renderWorkout(){
           <div class="small">Mods: ${ex.mods}</div>
           <a class="small" href="${ex.video}" target="_blank" rel="noopener">Watch demo</a>
         </div>`;
-    if(!trackLog){
+    const waitHang = needsHangPrimer(ex) && !hangPrimerDone[i];
+    if(waitHang){
+      const hs = PWLogic.HANG_PRIMER_SECS;
+      html += `
+        <div class="card" id="hangprimer">
+          <b>Bar hang</b> <span class="small">${hs}s primer</span>
+          <p class="small">Pack the shoulders. Quiet body. Come off if you dump. This is not a logged set.</p>
+          <div class="timer" id="hangtimer">${fmtTime(hs)}</div>
+          <button type="button" id="hangStart" onclick="startHangPrimer()">Start hang</button>
+          <button type="button" class="secondary" onclick="finishHangPrimer()">Skip hang</button>
+        </div>`;
+    }
+    if(!waitHang && !trackLog){
       html += `<p class="small">Not tracking numbers this session. Tap Tracking on if you want to log.</p>`;
     }
-    if(trackLog) for(let s=0;s<n;s++){
+    if(!waitHang && trackLog) for(let s=0;s<n;s++){
       const d = draft[i][s] || {};
       let w = d.w;
       let r = d.r;
@@ -1004,7 +1077,7 @@ function renderWorkout(){
           <button type="button" class="setdone${d.done?' selected':''}" id="done${i}_${s}" onclick="completeSet(${i},${s})" aria-label="Set done">✓</button>
         </div>`;
     }
-    if(trackLog){
+    if(!waitHang && trackLog){
       html += `<button type="button" class="tiny" onclick="addSet(${i})">+ Set</button>`;
       if(n>1) html += `<button type="button" class="tiny secondary" onclick="removeSet(${i})">- Set</button>`;
     }

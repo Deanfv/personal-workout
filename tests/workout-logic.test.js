@@ -120,4 +120,14 @@ assert.ok(cSwing.indexOf('goblet') === -1);
 assert.ok(cSwing.indexOf('rdl') === -1);
 assert.ok(cSwing.indexOf('hkpress') === -1);
 
+assert.ok(L.HANG_PRIMER_SECS >= 60 && L.HANG_PRIMER_SECS <= 90);
+assert.ok(L.shouldHangPrimer('Workout A', 'goblet'));
+assert.ok(L.shouldHangPrimer('Workout B', 'swing'));
+assert.ok(!L.shouldHangPrimer('Workout A', 'hang'), 'Do not stack a hang in front of the hang lift');
+assert.ok(!L.shouldHangPrimer('Workout C', 'swing_1a'), 'Charlie does not get the hang primer');
+assert.ok(!L.shouldHangPrimer('Workout C', 'kb_clean'));
+assert.strictEqual(TEMPLATE_A.length, 10);
+assert.strictEqual(TEMPLATE_B.length, 10);
+assert.strictEqual(TEMPLATE_C.length, 4);
+
 console.log('workout-logic tests passed');
