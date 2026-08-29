@@ -38,9 +38,10 @@ a.small{color:#dcc684}
 #screen{min-height:100vh}
 .timer{font-size:2rem;text-align:center;margin:12px 0;color:#eef2f9}
 .splitcue{font-size:1.5rem;text-align:center;font-weight:700;color:#dcc684;margin:4px 0 10px}
-.wok-clock{position:sticky;top:0;z-index:5;background:#0d1c38;border:1px solid #233a63;border-radius:14px;padding:10px;margin:8px 0 12px;text-align:center}
+.wok-clock{position:sticky;top:0;z-index:5;background:#0d1c38;border:1px solid #233a63;border-radius:14px;padding:10px 10px 10px 72px;margin:8px 0 12px;text-align:center}
 .wok-clock .t{font-size:1.8rem;font-variant-numeric:tabular-nums;color:#dcc684}
 .wok-clock .l{font-size:0.8rem;color:#93a4c2}
+.wok-clock .wok-home{position:absolute;left:10px;top:10px;width:auto;margin:0;padding:8px 12px}
 .cue{background:#0d1c38;padding:8px;border-radius:10px;margin:6px 0;font-size:0.9rem}
 .how{background:#0d1c38;padding:10px;border-radius:10px;margin:6px 0;font-size:0.92rem;color:#eef2f9}
 .disclaimer,.guard{font-size:0.75rem;color:#f87171;margin:12px 0;padding:8px 12px;background:#152a4e;border:none;border-left:3px solid #f87171;border-radius:0 14px 14px 0}
@@ -136,19 +137,19 @@ button.pill{flex:1;width:auto;margin:0;background:#152a4e;color:#eef2f9;border:1
     <div id="homeDash">
       <p class="eyebrow">Personal workout</p>
       <h1 class="hero">Golf strength.</h1>
-      <p class="lede">Tour-level dumbbell and kettlebell. About 60. Form first.</p>
+      <p class="lede">Tour-level dumbbell and kettlebell. About 60. Form first.<br>About 60 minutes.</p>
       <div class="card suggested" id="cardA" data-workout="A">
         <p class="eyebrow suggest-mark">Suggested</p>
         <h2>Workout A</h2>
         <p class="small lastline suggest-done">No session logged yet.</p>
-        <p class="small">Bar hang, squat, RDL, press, row, pull-up, suitcase, reverse lunge, chop, Pallof.</p>
+        <p class="small">Bar hang, squat, press, RDL, row, reverse lunge, pull-up, suitcase, chop, Pallof.</p>
         <button type="button" class="card-start" onclick="startTemplate('A')">Start Workout A</button>
       </div>
       <div class="card" id="cardB" data-workout="B">
         <p class="eyebrow suggest-mark hidden">Suggested</p>
         <h2>Workout B</h2>
         <p class="small lastline suggest-done hidden"></p>
-        <p class="small">Bar hang, offset squat, single-leg RDL, floor press, row, pull-up, farmer, lateral lunge, lift, swing.</p>
+        <p class="small">Bar hang, swing, floor press, offset squat, row, farmer, single-leg RDL, pull-up, lateral lunge, lift.</p>
         <button type="button" class="secondary card-start" onclick="startTemplate('B')">Start Workout B</button>
       </div>
       <div class="card" id="cardC" data-workout="C">
@@ -158,7 +159,7 @@ button.pill{flex:1;width:auto;margin:0;background:#152a4e;color:#eef2f9;border:1
           <span class="tag-pavel">Pavel</span>
         </div>
         <p class="small lastline suggest-done hidden"></p>
-        <p class="small">Short Pavel day. Swing, get-up, windmill, clean. Four lifts only.</p>
+        <p class="small">Short Pavel day. Swing, clean, get-up, windmill. Four lifts only.</p>
         <button type="button" class="secondary card-start" onclick="startTemplate('C')">Start Workout C</button>
         <button type="button" class="link" onclick="showPavelNote()">What is a Pavel day?</button>
       </div>
@@ -321,10 +322,10 @@ const EXERCISES = [
     mods:'Band. Jump to the top, slow lower. Inverted row. Dead hang holds.',
     sets:'3x4-8', video:'https://www.youtube.com/watch?v=eGo4IYlbE5g'},
   {id:'hang', name:'Bar Hang', cat:'pull',
-    how:'Dead hang from a bar, palms away or toward you. Pack the shoulders down (do not shrug). Ribs stacked, legs quiet. Breathe. This is a timed hold for grip and shoulder packing, not a swing. Come off the bar if the shoulders start to dump.',
+    how:'Dead hang from a bar, palms away or toward you. Pack the shoulders down (do not shrug). Ribs stacked, legs quiet. Breathe. Hold 60–120 seconds per set. This is a timed hold for grip and shoulder packing, not a swing. Come off the bar if the shoulders start to dump.',
     cues:'Shoulders packed. Quiet body. Breathe. Stop if you dump.',
-    mods:'Shorter hold. One foot on a box. Neutral grip if the bar allows.',
-    sets:'3x20-40s', video:'https://www.youtube.com/watch?v=dOCQjaasbGs'}
+    mods:'Shorter hold if 60s is not there yet. One foot on a box. Neutral grip if the bar allows.',
+    sets:'3x60–120s', video:'https://www.youtube.com/watch?v=dOCQjaasbGs'}
 ];
 
 let screen = {balance:null, overhead:null, hinge:null, skipped:false};
@@ -698,9 +699,9 @@ function runTimer(secs, id, onDone){
   },1000);
 }
 
-const TEMPLATE_A = ['hang','goblet','rdl','hkpress','row','pullup','suitcase','reverse_lunge','chop','pallof'];
-const TEMPLATE_B = ['hang','offset_squat','slrdl','floorpress','row','pullup','farmer','lateral_lunge','lift','swing'];
-const TEMPLATE_C = ['swing_1a','tgu_half','windmill','kb_clean'];
+const TEMPLATE_A = ['hang','goblet','hkpress','rdl','row','reverse_lunge','pullup','suitcase','chop','pallof'];
+const TEMPLATE_B = ['hang','swing','floorpress','offset_squat','row','farmer','slrdl','pullup','lateral_lunge','lift'];
+const TEMPLATE_C = ['swing_1a','kb_clean','tgu_half','windmill'];
 const TEMPLATE_ALTS = {
   rdl: ['hipthrust','goblet'],
   slrdl: ['rdl','reverse_lunge','hipthrust'],
@@ -1099,8 +1100,11 @@ function renderWorkout(){
   const total = currentWorkout.length;
   if(liftIndex < 0) liftIndex = 0;
   if(liftIndex >= total) liftIndex = Math.max(0, total - 1);
-  let html = `<div class="wok-clock"><div class="l">Session clock</div><div class="t" id="wokclock">${live}</div></div>
-    <button type="button" class="link" onclick="abandonSession()">Home</button>
+  let html = `<div class="wok-clock">
+    <button type="button" class="tiny secondary wok-home" onclick="abandonSession()">Home</button>
+    <div class="l">Session clock</div>
+    <div class="t" id="wokclock">${live}</div>
+  </div>
     <h2>${sessionLabel}</h2>
     ${sessionLabel === 'Workout C' ? '<button type="button" class="tiny secondary" onclick="showPavelNote()">What is a Pavel day?</button>' : ''}
     <p>Lift ${liftIndex+1} of ${total}</p>
