@@ -19,7 +19,8 @@ body{font-family:Inter,system-ui,-apple-system,sans-serif;background:#0d1c38;col
 .eyebrow{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#93a4c2;margin:0 0 8px;font-weight:600}
 .hero{font-size:34px;font-weight:800;line-height:1.05;letter-spacing:-0.03em;color:#eef2f9;margin:0 0 10px}
 h1{font-size:1.4rem;margin:8px 0;color:#eef2f9}
-h2{font-size:1.1rem;margin:12px 0 6px;color:#93a4c2}
+h2{font-size:1.1rem;margin:12px 0 6px;color:#eef2f9}
+.card h2{font-size:1.25rem;font-weight:700;margin:2px 0 8px}
 button{background:#dcc684;color:#1c1a0e;border:none;padding:12px 16px;border-radius:14px;font-size:1rem;width:100%;margin:6px 0;cursor:pointer;font-family:inherit;font-weight:600}
 button.secondary{background:#152a4e;color:#eef2f9;border:1px solid #233a63}
 button.danger{background:#152a4e;color:#f87171;border:1px solid #7f1d1d}
@@ -77,8 +78,9 @@ button.bw.on{background:#dcc684;color:#1c1a0e;border-color:#dcc684}
 .lede{color:#bcc9df;margin:0 0 18px}
 .num{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#93a4c2;font-weight:600;margin-bottom:6px}
 .yn{display:flex;gap:8px;margin-top:10px}
-.yn button{flex:1;margin:0;background:#0d1c38;border:1px solid #233a63;color:#eef2f9}
-.screen-card button.selected{background:#4fae7c;border-color:#4fae7c;color:#eef2f9}
+.yn button{flex:1;margin:0;background:#0d1c38;border:1px solid #233a63;color:#eef2f9;box-shadow:none}
+.yn button:hover,.yn button:focus{background:#0d1c38;border-color:#233a63;color:#eef2f9}
+.screen-card button.selected,.yn button.selected,.yn button.selected:hover,.yn button.selected:focus{background:#4fae7c;border-color:#4fae7c;color:#eef2f9}
 button.link{width:auto;background:transparent;color:#dcc684;padding:8px 0;margin:4px 12px 4px 0;text-align:left;font-weight:600}
 .pills{display:flex;gap:8px;margin:8px 0}
 button.pill{flex:1;width:auto;margin:0;background:#152a4e;color:#eef2f9;border:1px solid #233a63}
