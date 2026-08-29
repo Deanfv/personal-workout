@@ -2,8 +2,8 @@
 var assert = require('assert');
 var L = require('../workout-logic.js');
 
-var TEMPLATE_A = ['hang','goblet','hkpress','rdl','row','reverse_lunge','pullup','suitcase','chop','pallof'];
-var TEMPLATE_B = ['hang','swing','floorpress','offset_squat','row','farmer','slrdl','pullup','lateral_lunge','lift'];
+var TEMPLATE_A = ['hang','goblet','hkpress','rdl','row','reverse_lunge','pallof'];
+var TEMPLATE_B = ['hang','swing','floorpress','offset_squat','row','farmer','lift'];
 var TEMPLATE_C = ['swing_1a','kb_clean','tgu_half','windmill'];
 var ALTS = {
   rdl: ['hipthrust','goblet'],
@@ -62,7 +62,6 @@ assert.ok(failHinge.indexOf('hipthrust') !== -1, 'Failed hinge swaps RDL to hip 
 var failOverhead = resolve(TEMPLATE_A, {balance:true, overhead:false, hinge:true});
 assert.ok(failOverhead.indexOf('hkpress') === -1);
 assert.ok(failOverhead.indexOf('floorpress') !== -1);
-assert.ok(failOverhead.indexOf('pullup') === -1);
 assert.ok(failOverhead.indexOf('hang') === -1);
 
 var oldBugA = resolve(TEMPLATE_A, {balance:null, overhead:null, hinge:null});
@@ -122,14 +121,14 @@ assert.ok(cSwing.indexOf('hkpress') === -1);
 
 assert.ok(!('shouldHangPrimer' in L));
 assert.ok(!('HANG_PRIMER_SECS' in L));
-assert.deepStrictEqual(TEMPLATE_A, ['hang','goblet','hkpress','rdl','row','reverse_lunge','pullup','suitcase','chop','pallof']);
-assert.deepStrictEqual(TEMPLATE_B, ['hang','swing','floorpress','offset_squat','row','farmer','slrdl','pullup','lateral_lunge','lift']);
+assert.deepStrictEqual(TEMPLATE_A, ['hang','goblet','hkpress','rdl','row','reverse_lunge','pallof']);
+assert.deepStrictEqual(TEMPLATE_B, ['hang','swing','floorpress','offset_squat','row','farmer','lift']);
 assert.deepStrictEqual(TEMPLATE_C, ['swing_1a','kb_clean','tgu_half','windmill']);
 assert.strictEqual(TEMPLATE_A[0], 'hang');
 assert.strictEqual(TEMPLATE_B[0], 'hang');
 assert.strictEqual(TEMPLATE_B[1], 'swing');
-assert.strictEqual(TEMPLATE_A.length, 10);
-assert.strictEqual(TEMPLATE_B.length, 10);
+assert.strictEqual(TEMPLATE_A.length, 7);
+assert.strictEqual(TEMPLATE_B.length, 7);
 assert.strictEqual(TEMPLATE_C.length, 4);
 
 console.log('workout-logic tests passed');

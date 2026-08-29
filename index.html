@@ -138,29 +138,29 @@ button.pill{flex:1;width:auto;margin:0;background:#152a4e;color:#eef2f9;border:1
       <p class="eyebrow">Personal workout</p>
       <h1 class="hero">Golf strength.</h1>
       <p class="lede">Tour-level dumbbell and kettlebell. About 60 minutes. Form first.</p>
-      <div class="card suggested" id="cardA" data-workout="A">
-        <p class="eyebrow suggest-mark">Suggested</p>
+      <div class="card" id="cardA" data-workout="A">
+        <p class="eyebrow suggest-mark hidden">Suggested</p>
         <h2>Workout A</h2>
-        <p class="small lastline suggest-done">No session logged yet.</p>
-        <p class="small">Bar hang, squat, press, RDL, row, reverse lunge, pull-up, suitcase, chop, Pallof.</p>
-        <button type="button" class="card-start" onclick="startTemplate('A')">Start Workout A</button>
+        <p class="small lastline suggest-done hidden"></p>
+        <p class="small">7 lifts. Bar hang, squat, press, RDL, row, reverse lunge, Pallof.</p>
+        <button type="button" class="secondary card-start" onclick="startTemplate('A')">Start Workout A</button>
       </div>
       <div class="card" id="cardB" data-workout="B">
         <p class="eyebrow suggest-mark hidden">Suggested</p>
         <h2>Workout B</h2>
         <p class="small lastline suggest-done hidden"></p>
-        <p class="small">Bar hang, swing, floor press, offset squat, row, farmer, single-leg RDL, pull-up, lateral lunge, lift.</p>
+        <p class="small">7 lifts. Bar hang, swing, floor press, offset squat, row, farmer, lift.</p>
         <button type="button" class="secondary card-start" onclick="startTemplate('B')">Start Workout B</button>
       </div>
-      <div class="card" id="cardC" data-workout="C">
-        <p class="eyebrow suggest-mark hidden">Suggested</p>
+      <div class="card suggested" id="cardC" data-workout="C">
+        <p class="eyebrow suggest-mark">Suggested</p>
         <div class="row-between">
           <h2>Workout C</h2>
           <span class="tag-pavel">Pavel</span>
         </div>
-        <p class="small lastline suggest-done hidden"></p>
-        <p class="small">Short Pavel day. Swing, clean, get-up, windmill. Four lifts only.</p>
-        <button type="button" class="secondary card-start" onclick="startTemplate('C')">Start Workout C</button>
+        <p class="small lastline suggest-done">No session logged yet.</p>
+        <p class="small">4 lifts. Swing, clean, get-up, windmill.</p>
+        <button type="button" class="card-start" onclick="startTemplate('C')">Start Workout C</button>
         <button type="button" class="link" onclick="showPavelNote()">What is a Pavel day?</button>
       </div>
       <p class="eyebrow">Stretch</p>
@@ -322,10 +322,10 @@ const EXERCISES = [
     mods:'Band. Jump to the top, slow lower. Inverted row. Dead hang holds.',
     sets:'3x4-8', video:'https://www.youtube.com/watch?v=eGo4IYlbE5g'},
   {id:'hang', name:'Bar Hang', cat:'pull',
-    how:'Dead hang from a bar, palms away or toward you. Pack the shoulders down (do not shrug). Ribs stacked, legs quiet. Breathe. Hold 60–120 seconds per set. This is a timed hold for grip and shoulder packing, not a swing. Come off the bar if the shoulders start to dump.',
+    how:'Dead hang from a bar, palms away or toward you. Pack the shoulders down (do not shrug). Ribs stacked, legs quiet. Breathe. Two sets, 60–90 seconds each. This is a timed hold for grip and shoulder packing, not a swing. Come off the bar if the shoulders start to dump.',
     cues:'Shoulders packed. Quiet body. Breathe. Stop if you dump.',
-    mods:'Shorter hold if 60s is not there yet. One foot on a box. Neutral grip if the bar allows.',
-    sets:'3x60–120s', video:'https://www.youtube.com/watch?v=dOCQjaasbGs'}
+    mods:'Neutral grip if the bar allows. Stop at 90s.',
+    sets:'2x60–90s', video:'https://www.youtube.com/watch?v=dOCQjaasbGs'}
 ];
 
 let screen = {balance:null, overhead:null, hinge:null, skipped:false};
@@ -430,9 +430,9 @@ function lastDoneInfo(){
 
 function suggestedWhich(){
   const info = lastDoneInfo();
-  if(info.hasLast && info.label === 'Workout C') return 'C';
+  if(info.hasLast && info.label === 'Workout A') return 'A';
   if(info.hasLast && info.label === 'Workout B') return 'B';
-  return 'A';
+  return 'C';
 }
 
 function paintHome(){
@@ -507,6 +507,7 @@ let warmupIndex = 0;
 let warmupMode = 'full';
 let warmupHalf = 0;
 let switchTo = null;
+let pendingAfterWarmup = null;
 
 function warmupByName(name){
   return WARMUP.find(w => w.name === name);
@@ -582,7 +583,8 @@ function clearWarmupTimers(){
   if(switchTo){ clearTimeout(switchTo); switchTo = null; }
 }
 
-function startWarmup(mode){
+function startWarmup(mode, keepPending){
+  if(!keepPending) pendingAfterWarmup = null;
   warmupMode = mode || 'full';
   warmupIndex = 0;
   warmupHalf = 0;
@@ -603,6 +605,12 @@ function renderWarmupStep(){
   const c = document.getElementById('content');
   const list = activeWarmup();
   if(warmupIndex >= list.length){
+    if(pendingAfterWarmup){
+      const next = pendingAfterWarmup;
+      pendingAfterWarmup = null;
+      beginWorkout(next.lifts, next.label);
+      return;
+    }
     c.innerHTML = `
       <h2>Stretch done</h2>
       <div class="card">
@@ -628,10 +636,15 @@ function renderWarmupStep(){
   const shown = kind ? halves[0] : w.secs;
   const splitNote = kind ? `<p>${splitPlain(w)}</p>` : '';
   const splitCue = kind ? `<div class="splitcue" id="splitCue">${splitFirstLabel(kind)}</div>` : '';
+  const glued = pendingAfterWarmup ? pendingAfterWarmup.label : '';
+  const lead = glued
+    ? '5-minute pulse, then ' + glued + '. Hang is first after this.'
+    : 'One move at a time. Start the step to run its countdown. When it hits zero, the next move comes up. This does not start a workout.';
   c.innerHTML = `
+    <button type="button" class="tiny secondary" onclick="abandonSession()">Home</button>
     <p class="small">${w.block}</p>
-    <h2>${warmupTitle()} · ${n} of ${list.length}</h2>
-    <p class="small">One move at a time. Start the step to run its countdown. When it hits zero, the next move comes up. This does not start a workout.</p>
+    <h2>${warmupTitle()} · ${n} of ${list.length}${glued ? ' · then ' + glued : ''}</h2>
+    <p class="small">${lead}</p>
     <div class="card">
       <b>${w.name}</b> <span class="small">${w.reps} · ${fmtTime(w.secs)}</span>
       ${splitNote}
@@ -699,8 +712,8 @@ function runTimer(secs, id, onDone){
   },1000);
 }
 
-const TEMPLATE_A = ['hang','goblet','hkpress','rdl','row','reverse_lunge','pullup','suitcase','chop','pallof'];
-const TEMPLATE_B = ['hang','swing','floorpress','offset_squat','row','farmer','slrdl','pullup','lateral_lunge','lift'];
+const TEMPLATE_A = ['hang','goblet','hkpress','rdl','row','reverse_lunge','pallof'];
+const TEMPLATE_B = ['hang','swing','floorpress','offset_squat','row','farmer','lift'];
 const TEMPLATE_C = ['swing_1a','kb_clean','tgu_half','windmill'];
 const TEMPLATE_ALTS = {
   rdl: ['hipthrust','goblet'],
@@ -731,15 +744,25 @@ function resolveTemplate(ids){
   return picks.map(id => EXERCISES.find(e => e.id === id)).filter(Boolean);
 }
 
+function defaultSetCount(ex){
+  return (ex && ex.id === 'hang') ? 2 : 3;
+}
+
+function emptyDraftSets(n){
+  const rows = [];
+  for(let i=0;i<n;i++) rows.push({w:'',r:'',p:'',done:false});
+  return rows;
+}
+
 function beginWorkout(selected, label){
   currentWorkout = selected;
   sessionLabel = label;
   liftIndex = 0;
   swapCursor = {};
-  setCounts = selected.map(() => 3);
+  setCounts = selected.map(e => defaultSetCount(e));
   howOpen = selected.map(() => false);
   liftDone = selected.map(() => false);
-  draft = selected.map(() => [{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false}]);
+  draft = selected.map(e => emptyDraftSets(defaultSetCount(e)));
   localStorage.setItem('pw_last_ids', JSON.stringify(selected.map(e => e.id)));
   localStorage.setItem('pw_last_label', label);
   startWorkoutClock();
@@ -750,7 +773,14 @@ function beginWorkout(selected, label){
 function startTemplate(which){
   const ids = which === 'C' ? TEMPLATE_C : which === 'B' ? TEMPLATE_B : TEMPLATE_A;
   const label = which === 'C' ? 'Workout C' : which === 'B' ? 'Workout B' : 'Workout A';
-  beginWorkout(resolveTemplate(ids), label);
+  const lifts = resolveTemplate(ids);
+  if(which === 'A' || which === 'B'){
+    pendingAfterWarmup = {lifts:lifts, label:label};
+    startWarmup('short', true);
+    return;
+  }
+  pendingAfterWarmup = null;
+  beginWorkout(lifts, label);
 }
 
 function startLast(){
@@ -767,7 +797,14 @@ function startLast(){
     return;
   }
   const label = localStorage.getItem('pw_last_label') || 'Same as last';
-  beginWorkout(resolveTemplate(ids), label);
+  const lifts = resolveTemplate(ids);
+  if(label === 'Workout A' || label === 'Workout B'){
+    pendingAfterWarmup = {lifts:lifts, label:label};
+    startWarmup('short', true);
+    return;
+  }
+  pendingAfterWarmup = null;
+  beginWorkout(lifts, label);
 }
 
 function generateWorkout(){ startTemplate('A'); }
@@ -975,6 +1012,7 @@ function clearContent(){
 }
 
 function abandonSession(){
+  pendingAfterWarmup = null;
   readDraft();
   if(typeof stopWorkoutClock === 'function') stopWorkoutClock();
   if(typeof clearWarmupTimers === 'function') clearWarmupTimers();
@@ -1050,8 +1088,8 @@ function swapLift(){
   currentWorkout[i] = next;
   howOpen[i] = false;
   liftDone[i] = false;
-  setCounts[i] = 3;
-  draft[i] = [{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false}];
+  setCounts[i] = defaultSetCount(next);
+  draft[i] = emptyDraftSets(setCounts[i]);
   try { localStorage.setItem('pw_last_ids', JSON.stringify(currentWorkout.map(e => e.id))); } catch(e){}
   renderWorkout();
 }
