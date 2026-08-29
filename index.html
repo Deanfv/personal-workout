@@ -139,20 +139,20 @@ button.pill{flex:1;width:auto;margin:0;background:#152a4e;color:#eef2f9;border:1
         <h2 id="suggestTitle">Workout A</h2>
         <p class="small lastline" id="lastDoneLine">No session logged yet.</p>
         <p class="small" id="suggestBlurb">Bar hang, squat, RDL, press, row, pull-up, suitcase, reverse lunge, chop, Pallof.</p>
-        <button type="button" onclick="startSuggested()">Start session</button>
+        <button type="button" id="suggestStart" onclick="startSuggested()">Start Workout A</button>
       </div>
       <div class="card">
-        <p class="eyebrow">Workout B</p>
+        <h2>Workout B</h2>
         <p class="small">Bar hang, offset squat, single-leg RDL, floor press, row, pull-up, farmer, lateral lunge, lift, swing.</p>
-        <button type="button" class="secondary" onclick="startTemplate('B')">Start B</button>
+        <button type="button" class="secondary" onclick="startTemplate('B')">Start Workout B</button>
       </div>
       <div class="card">
         <div class="row-between">
-          <p class="eyebrow">Workout C</p>
+          <h2>Workout C</h2>
           <span class="tag-pavel">Pavel</span>
         </div>
         <p class="small">Short Pavel day. Swing, get-up, windmill, clean. Four lifts only.</p>
-        <button type="button" class="secondary" onclick="startTemplate('C')">Start C</button>
+        <button type="button" class="secondary" onclick="startTemplate('C')">Start Workout C (Pavel)</button>
         <button type="button" class="link" onclick="showPavelNote()">What is a Pavel day?</button>
       </div>
       <p class="eyebrow">Stretch</p>
@@ -420,13 +420,21 @@ function lastDoneInfo(){
   return {label:label, ids:ids, date:date, elapsed:elapsed, hasLast: ids.length > 0};
 }
 
+function suggestStartLabel(label){
+  if(label === 'Workout C') return 'Start Workout C (Pavel)';
+  if(label === 'Workout B') return 'Start Workout B';
+  return 'Start Workout A';
+}
+
 function paintHome(){
   const info = lastDoneInfo();
   const title = document.getElementById('suggestTitle');
+  const start = document.getElementById('suggestStart');
   const line = document.getElementById('lastDoneLine');
   const blurb = document.getElementById('suggestBlurb');
   if(info.hasLast){
     if(title) title.textContent = info.label || 'Same as last';
+    if(start) start.textContent = suggestStartLabel(info.label);
     if(blurb){
       if(info.label === 'Workout C') blurb.textContent = 'Short Pavel day. Swing, get-up, windmill, clean. Four lifts only.';
       else if(info.label === 'Workout B') blurb.textContent = 'Bar hang, offset squat, single-leg RDL, floor press, row, pull-up, farmer, lateral lunge, lift, swing.';
@@ -434,6 +442,7 @@ function paintHome(){
     }
   } else {
     if(title) title.textContent = 'Workout A';
+    if(start) start.textContent = 'Start Workout A';
     if(blurb) blurb.textContent = 'Bar hang, squat, RDL, press, row, pull-up, suitcase, reverse lunge, chop, Pallof.';
   }
   if(line){
@@ -608,7 +617,7 @@ function renderWarmupStep(){
       <button onclick="clearContent()">Done, go play</button>
       <button class="secondary" onclick="startTemplate('A')">Start Workout A</button>
       <button class="secondary" onclick="startTemplate('B')">Start Workout B</button>
-      <button class="secondary" onclick="startTemplate('C')">Start Workout C</button>
+      <button class="secondary" onclick="startTemplate('C')">Start Workout C (Pavel)</button>
       <button class="secondary" onclick="startLast()">Same as last</button>
     `;
     return;
