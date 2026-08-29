@@ -7,13 +7,14 @@
   var SCREEN_KEYS = ['balance', 'overhead', 'hinge'];
 
   var LOCKS = {
-    balance: ['slrdl', 'stepup', 'swing', 'swing_1a', 'bulgarian', 'lateral_lunge'],
+    balance: ['slrdl', 'stepup', 'swing', 'swing_1a', 'kb_clean', 'bulgarian', 'lateral_lunge'],
     overhead: ['hkpress', 'windmill', 'tgu_half', 'swing', 'swing_1a', 'pullup', 'hang'],
-    hinge: ['rdl', 'slrdl', 'swing', 'swing_1a', 'windmill']
+    hinge: ['rdl', 'slrdl', 'swing', 'swing_1a', 'kb_clean', 'windmill']
   };
 
   // Workout B swing slot: two-hand Russian, one-arm Russian, windmill, half get-up.
   var SWING_SWAP = ['swing', 'swing_1a', 'windmill', 'tgu_half'];
+  var CLEAN_SWAP = ['kb_clean', 'suitcase'];
 
   function uniq(list) {
     var out = [];
@@ -85,6 +86,15 @@
     tryAdd(originId);
     if (SWING_SWAP.indexOf(originId) !== -1) {
       SWING_SWAP.forEach(tryAdd);
+      if (originId === 'windmill') tryAdd('halo');
+      if (originId === 'tgu_half') {
+        tryAdd('deadbug');
+        tryAdd('halo');
+      }
+      return cycle;
+    }
+    if (originId === 'kb_clean') {
+      CLEAN_SWAP.forEach(tryAdd);
       return cycle;
     }
     exercises.forEach(function (e) {
@@ -98,6 +108,7 @@
   return {
     SCREEN_KEYS: SCREEN_KEYS,
     SWING_SWAP: SWING_SWAP,
+    CLEAN_SWAP: CLEAN_SWAP,
     isFailedScreen: isFailedScreen,
     isAnsweredScreen: isAnsweredScreen,
     screenComplete: screenComplete,
