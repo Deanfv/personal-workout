@@ -111,6 +111,8 @@ button.bw.on{background:#16a34a}
     <p class="small">Squat, RDL, press, row, pull-up, bar hang, suitcase, reverse lunge, chop, Pallof. Same lifts every A day.</p>
     <button onclick="startTemplate('B')">Workout B</button>
     <p class="small">Offset squat, single-leg RDL, floor press, row, pull-up, bar hang, farmer, lateral lunge, lift, swing. Same lifts every B day.</p>
+    <button onclick="startTemplate('C')">Workout C</button>
+    <p class="small">Short Pavel day. Swing, get-up, windmill, clean. Four lifts only.</p>
     <button class="secondary" onclick="startLast()">Same as last</button>
     <button class="secondary" onclick="showHistory()">History &amp; Progress</button>
     <button class="secondary" onclick="showSelfVideo()">Self-video (optional)</button>
@@ -119,7 +121,7 @@ button.bw.on{background:#16a34a}
   </div>
 </div>
 
-<script src="workout-logic.js?v=20260827a"></script>
+<script src="workout-logic.js?v=20260829a"></script>
 <script>
 const EXERCISES = [
   {id:'goblet', name:'Goblet Squat', cat:'squat',
@@ -227,6 +229,11 @@ const EXERCISES = [
     cues:'Hinge hard. Snap hips. Stay square. Chest height only. Light bell.',
     mods:'Two-hand swing first. Very light. Hinge practice. Locked if balance or hinge screen fails.',
     sets:'3x8-10/side', video:'https://www.youtube.com/watch?v=dAnl36lJQow'},
+  {id:'kb_clean', name:'Single-Arm KB Clean (light)', cat:'clean',
+    how:'Hike a light bell back like a one-arm swing, then guide it up the body and catch it in the front rack — fist under the chin, bell resting on the forearm. Stop at the rack. Do not press. The hips snap the bell up; the arm just steers. Catch quiet, elbow in, ribs down. Switch sides each set. This is hip power into a packed shoulder — the same hip-to-shoulder link you use to deliver the club.',
+    cues:'Hinge. Snap hips. Steer, don’t curl. Catch in the rack. No press.',
+    mods:'Very light. Two-hand swing first. Hang clean (less snap). Locked if balance or hinge screen fails.',
+    sets:'3x5-8/side', video:'https://www.youtube.com/watch?v=hIMwYnpgB90'},
   {id:'halo', name:'KB Halo', cat:'mobility',
     how:'Hold the KB by the horns at chin height. Circle it slowly around the head, keeping the head still and the ribs down. Reverse direction. Soft elbows. This opens thoracic rotation and the shoulders — the mobility tour players chase so the arms can stay connected without the low back compensating.',
     cues:'Circle slow around the head. Core tight. Elbows soft. Head still.',
@@ -468,6 +475,7 @@ function renderWarmupStep(){
       <button onclick="document.getElementById('content').innerHTML=''">Done, go play</button>
       <button class="secondary" onclick="startTemplate('A')">Start Workout A</button>
       <button class="secondary" onclick="startTemplate('B')">Start Workout B</button>
+      <button class="secondary" onclick="startTemplate('C')">Start Workout C</button>
       <button class="secondary" onclick="startLast()">Same as last</button>
     `;
     return;
@@ -552,6 +560,7 @@ function runTimer(secs, id, onDone){
 
 const TEMPLATE_A = ['goblet','rdl','hkpress','row','pullup','hang','suitcase','reverse_lunge','chop','pallof'];
 const TEMPLATE_B = ['offset_squat','slrdl','floorpress','row','pullup','hang','farmer','lateral_lunge','lift','swing'];
+const TEMPLATE_C = ['swing_1a','tgu_half','windmill','kb_clean'];
 const TEMPLATE_ALTS = {
   rdl: ['hipthrust','goblet'],
   slrdl: ['rdl','reverse_lunge','hipthrust'],
@@ -560,6 +569,7 @@ const TEMPLATE_ALTS = {
   hkpress: ['floorpress'],
   windmill: ['halo','swing','swing_1a','tgu_half'],
   tgu_half: ['deadbug','halo','swing','swing_1a','windmill'],
+  kb_clean: ['suitcase'],
   row: ['pullup','hang'],
   pullup: ['row','hang'],
   hang: ['pullup','row'],
@@ -596,8 +606,8 @@ function beginWorkout(selected, label){
 }
 
 function startTemplate(which){
-  const ids = which === 'B' ? TEMPLATE_B : TEMPLATE_A;
-  const label = which === 'B' ? 'Workout B' : 'Workout A';
+  const ids = which === 'C' ? TEMPLATE_C : which === 'B' ? TEMPLATE_B : TEMPLATE_A;
+  const label = which === 'C' ? 'Workout C' : which === 'B' ? 'Workout B' : 'Workout A';
   beginWorkout(resolveTemplate(ids), label);
 }
 
@@ -611,7 +621,7 @@ function startLast(){
     ids = prev.slice(0,8);
   }
   if(!ids.length){
-    alert('No last workout yet. Start A or B first.');
+    alert('No last workout yet. Start A, B, or C first.');
     return;
   }
   const label = localStorage.getItem('pw_last_label') || 'Same as last';
