@@ -110,9 +110,9 @@ button.bw.on{background:#16a34a}
     <button onclick="startWarmup('full')">Stretch (12 min)</button>
     <button onclick="startWarmup('long')">Stretch (18 min)</button>
     <button onclick="startTemplate('A')">Workout A</button>
-    <p class="small">Squat, RDL, press, row, pull-up, bar hang, suitcase, reverse lunge, chop, Pallof. Same lifts every A day.</p>
+    <p class="small">Bar hang, squat, RDL, press, row, pull-up, suitcase, reverse lunge, chop, Pallof. Same lifts every A day.</p>
     <button onclick="startTemplate('B')">Workout B</button>
-    <p class="small">Offset squat, single-leg RDL, floor press, row, pull-up, bar hang, farmer, lateral lunge, lift, swing. Same lifts every B day.</p>
+    <p class="small">Bar hang, offset squat, single-leg RDL, floor press, row, pull-up, farmer, lateral lunge, lift, swing. Same lifts every B day.</p>
     <button onclick="startTemplate('C')">Workout C</button>
     <p class="small">Short Pavel day. Swing, get-up, windmill, clean. Four lifts only.</p>
     <button type="button" class="tiny secondary" onclick="showPavelNote()">What is a Pavel day?</button>
@@ -130,7 +130,7 @@ button.bw.on{background:#16a34a}
   <button type="button" onclick="hidePavelNote()">Got it</button>
 </div>
 
-<script src="workout-logic.js?v=20260829b"></script>
+<script src="workout-logic.js?v=20260829c"></script>
 <script>
 const EXERCISES = [
   {id:'goblet', name:'Goblet Squat', cat:'squat',
@@ -285,8 +285,6 @@ let howOpen = [];
 let liftIndex = 0;
 let liftDone = [];
 let swapCursor = {};
-let hangPrimerDone = [];
-let hangPrimerRunning = false;
 let trackLog = true;
 (function loadTrack(){
   try {
@@ -569,8 +567,8 @@ function runTimer(secs, id, onDone){
   },1000);
 }
 
-const TEMPLATE_A = ['goblet','rdl','hkpress','row','pullup','hang','suitcase','reverse_lunge','chop','pallof'];
-const TEMPLATE_B = ['offset_squat','slrdl','floorpress','row','pullup','hang','farmer','lateral_lunge','lift','swing'];
+const TEMPLATE_A = ['hang','goblet','rdl','hkpress','row','pullup','suitcase','reverse_lunge','chop','pallof'];
+const TEMPLATE_B = ['hang','offset_squat','slrdl','floorpress','row','pullup','farmer','lateral_lunge','lift','swing'];
 const TEMPLATE_C = ['swing_1a','tgu_half','windmill','kb_clean'];
 const TEMPLATE_ALTS = {
   rdl: ['hipthrust','goblet'],
@@ -609,9 +607,6 @@ function beginWorkout(selected, label){
   setCounts = selected.map(() => 3);
   howOpen = selected.map(() => false);
   liftDone = selected.map(() => false);
-  hangPrimerDone = selected.map(() => false);
-  hangPrimerRunning = false;
-  stopHangTimer();
   draft = selected.map(() => [{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false}]);
   localStorage.setItem('pw_last_ids', JSON.stringify(selected.map(e => e.id)));
   localStorage.setItem('pw_last_label', label);
@@ -912,9 +907,6 @@ function swapLift(){
   currentWorkout[i] = next;
   howOpen[i] = false;
   liftDone[i] = false;
-  hangPrimerDone[i] = next.id === 'hang';
-  hangPrimerRunning = false;
-  stopHangTimer();
   setCounts[i] = 3;
   draft[i] = [{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false},{w:'',r:'',p:'',done:false}];
   try { localStorage.setItem('pw_last_ids', JSON.stringify(currentWorkout.map(e => e.id))); } catch(e){}
@@ -924,8 +916,6 @@ function swapLift(){
 function goToLift(i){
   readDraft();
   markLiftLeft(liftIndex);
-  hangPrimerRunning = false;
-  stopHangTimer();
   if(!currentWorkout.length) return;
   if(i < 0) i = 0;
   if(i >= currentWorkout.length) i = currentWorkout.length - 1;
@@ -936,8 +926,6 @@ function goToLift(i){
 function nextLift(){
   readDraft();
   markLiftLeft(liftIndex);
-  hangPrimerRunning = false;
-  stopHangTimer();
   if(liftIndex < currentWorkout.length - 1) liftIndex++;
   renderWorkout();
 }
@@ -945,8 +933,6 @@ function nextLift(){
 function prevLift(){
   readDraft();
   markLiftLeft(liftIndex);
-  hangPrimerRunning = false;
-  stopHangTimer();
   if(liftIndex > 0) liftIndex--;
   renderWorkout();
 }
@@ -963,29 +949,6 @@ function hidePavelNote(){
   const scrim = document.getElementById('pavelScrim');
   if(note) note.classList.add('hidden');
   if(scrim) scrim.classList.add('hidden');
-}
-
-function stopHangTimer(){
-  if(timerIv){ clearInterval(timerIv); timerIv = null; }
-}
-
-function needsHangPrimer(ex){
-  return PWLogic.shouldHangPrimer(sessionLabel, ex && ex.id);
-}
-
-function finishHangPrimer(){
-  hangPrimerRunning = false;
-  stopHangTimer();
-  hangPrimerDone[liftIndex] = true;
-  renderWorkout();
-}
-
-function startHangPrimer(){
-  hangPrimerRunning = true;
-  const secs = PWLogic.HANG_PRIMER_SECS;
-  const el = document.getElementById('hangtimer');
-  if(el) el.textContent = fmtTime(secs);
-  runTimer(secs, 'hangtimer', finishHangPrimer);
 }
 
 function renderWorkout(){
@@ -1026,22 +989,10 @@ function renderWorkout(){
           <div class="small">Mods: ${ex.mods}</div>
           <a class="small" href="${ex.video}" target="_blank" rel="noopener">Watch demo</a>
         </div>`;
-    const waitHang = needsHangPrimer(ex) && !hangPrimerDone[i];
-    if(waitHang){
-      const hs = PWLogic.HANG_PRIMER_SECS;
-      html += `
-        <div class="card" id="hangprimer">
-          <b>Bar hang</b> <span class="small">${hs}s primer</span>
-          <p class="small">Pack the shoulders. Quiet body. Come off if you dump. This is not a logged set.</p>
-          <div class="timer" id="hangtimer">${fmtTime(hs)}</div>
-          <button type="button" id="hangStart" onclick="startHangPrimer()">Start hang</button>
-          <button type="button" class="secondary" onclick="finishHangPrimer()">Skip hang</button>
-        </div>`;
-    }
-    if(!waitHang && !trackLog){
+    if(!trackLog){
       html += `<p class="small">Not tracking numbers this session. Tap Tracking on if you want to log.</p>`;
     }
-    if(!waitHang && trackLog) for(let s=0;s<n;s++){
+    if(trackLog) for(let s=0;s<n;s++){
       const d = draft[i][s] || {};
       let w = d.w;
       let r = d.r;
@@ -1077,7 +1028,7 @@ function renderWorkout(){
           <button type="button" class="setdone${d.done?' selected':''}" id="done${i}_${s}" onclick="completeSet(${i},${s})" aria-label="Set done">✓</button>
         </div>`;
     }
-    if(!waitHang && trackLog){
+    if(trackLog){
       html += `<button type="button" class="tiny" onclick="addSet(${i})">+ Set</button>`;
       if(n>1) html += `<button type="button" class="tiny secondary" onclick="removeSet(${i})">- Set</button>`;
     }

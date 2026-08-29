@@ -15,7 +15,6 @@
   // Workout B swing slot: two-hand Russian, one-arm Russian, windmill, half get-up.
   var SWING_SWAP = ['swing', 'swing_1a', 'windmill', 'tgu_half'];
   var CLEAN_SWAP = ['kb_clean', 'suitcase'];
-  var HANG_PRIMER_SECS = 75;
 
   function uniq(list) {
     var out = [];
@@ -106,17 +105,10 @@
     return cycle;
   }
 
-  function shouldHangPrimer(label, liftId) {
-    if (label !== 'Workout A' && label !== 'Workout B') return false;
-    return liftId !== 'hang';
-  }
-
   return {
     SCREEN_KEYS: SCREEN_KEYS,
     SWING_SWAP: SWING_SWAP,
     CLEAN_SWAP: CLEAN_SWAP,
-    HANG_PRIMER_SECS: HANG_PRIMER_SECS,
-    shouldHangPrimer: shouldHangPrimer,
     isFailedScreen: isFailedScreen,
     isAnsweredScreen: isAnsweredScreen,
     screenComplete: screenComplete,

@@ -2,8 +2,8 @@
 var assert = require('assert');
 var L = require('../workout-logic.js');
 
-var TEMPLATE_A = ['goblet','rdl','hkpress','row','pullup','hang','suitcase','reverse_lunge','chop','pallof'];
-var TEMPLATE_B = ['offset_squat','slrdl','floorpress','row','pullup','hang','farmer','lateral_lunge','lift','swing'];
+var TEMPLATE_A = ['hang','goblet','rdl','hkpress','row','pullup','suitcase','reverse_lunge','chop','pallof'];
+var TEMPLATE_B = ['hang','offset_squat','slrdl','floorpress','row','pullup','farmer','lateral_lunge','lift','swing'];
 var TEMPLATE_C = ['swing_1a','tgu_half','windmill','kb_clean'];
 var ALTS = {
   rdl: ['hipthrust','goblet'],
@@ -120,12 +120,14 @@ assert.ok(cSwing.indexOf('goblet') === -1);
 assert.ok(cSwing.indexOf('rdl') === -1);
 assert.ok(cSwing.indexOf('hkpress') === -1);
 
-assert.ok(L.HANG_PRIMER_SECS >= 60 && L.HANG_PRIMER_SECS <= 90);
-assert.ok(L.shouldHangPrimer('Workout A', 'goblet'));
-assert.ok(L.shouldHangPrimer('Workout B', 'swing'));
-assert.ok(!L.shouldHangPrimer('Workout A', 'hang'), 'Do not stack a hang in front of the hang lift');
-assert.ok(!L.shouldHangPrimer('Workout C', 'swing_1a'), 'Charlie does not get the hang primer');
-assert.ok(!L.shouldHangPrimer('Workout C', 'kb_clean'));
+assert.ok(!('shouldHangPrimer' in L));
+assert.ok(!('HANG_PRIMER_SECS' in L));
+assert.strictEqual(TEMPLATE_A[0], 'hang');
+assert.strictEqual(TEMPLATE_A[1], 'goblet');
+assert.strictEqual(TEMPLATE_A.indexOf('hang'), 0);
+assert.strictEqual(TEMPLATE_B[0], 'hang');
+assert.strictEqual(TEMPLATE_B[1], 'offset_squat');
+assert.strictEqual(TEMPLATE_B.indexOf('hang'), 0);
 assert.strictEqual(TEMPLATE_A.length, 10);
 assert.strictEqual(TEMPLATE_B.length, 10);
 assert.strictEqual(TEMPLATE_C.length, 4);
