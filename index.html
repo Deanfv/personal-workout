@@ -3,123 +3,173 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#0d1c38">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Personal Workout">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Personal Workout – Golf Strength</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,-apple-system,sans-serif;background:#0f172a;color:#e2e8f0;line-height:1.4;padding:12px;max-width:480px;margin:0 auto}
-h1{font-size:1.4rem;margin:8px 0;color:#38bdf8}
-h2{font-size:1.1rem;margin:12px 0 6px;color:#94a3b8}
-button{background:#0284c7;color:#fff;border:none;padding:12px 16px;border-radius:8px;font-size:1rem;width:100%;margin:6px 0;cursor:pointer}
-button.secondary{background:#334155}
-button.danger{background:#b91c1c}
-button.selected{background:#16a34a}
-button.ready{background:#16a34a}
-.card{background:#1e293b;border-radius:10px;padding:12px;margin:8px 0}
-.ex{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #334155}
-input,select{background:#0f172a;border:1px solid #475569;color:#e2e8f0;padding:8px;border-radius:6px;width:70px;font-size:1rem}
-label{font-size:0.9rem;color:#94a3b8}
-.small{font-size:0.85rem;color:#cbd5e1}
-.lastline{color:#f1f5f9}
-a.small{color:#38bdf8}
+html{background:#070d18}
+body{font-family:Inter,system-ui,-apple-system,sans-serif;background:#0d1c38;color:#eef2f9;line-height:1.4;padding:16px;max-width:480px;margin:0 auto;min-height:100vh}
+.eyebrow{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#93a4c2;margin:0 0 8px;font-weight:600}
+.hero{font-size:34px;font-weight:800;line-height:1.05;letter-spacing:-0.03em;color:#eef2f9;margin:0 0 10px}
+h1{font-size:1.4rem;margin:8px 0;color:#eef2f9}
+h2{font-size:1.1rem;margin:12px 0 6px;color:#eef2f9}
+.card h2{font-size:1.25rem;font-weight:700;margin:2px 0 8px}
+button{background:#dcc684;color:#1c1a0e;border:none;padding:12px 16px;border-radius:14px;font-size:1rem;width:100%;margin:6px 0;cursor:pointer;font-family:inherit;font-weight:600}
+button.secondary{background:#152a4e;color:#eef2f9;border:1px solid #233a63}
+button.danger{background:#152a4e;color:#f87171;border:1px solid #7f1d1d}
+button.selected{background:#dcc684;color:#1c1a0e}
+button.ready{background:#dcc684;color:#1c1a0e}
+.card{background:#152a4e;border:1px solid #233a63;border-radius:14px;padding:14px;margin:8px 0}
+.ex{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #233a63}
+input,select{background:#0d1c38;border:1px solid #233a63;color:#eef2f9;padding:8px;border-radius:10px;width:70px;font-size:1rem;font-family:inherit}
+label{font-size:0.9rem;color:#93a4c2}
+.small{font-size:0.85rem;color:#93a4c2}
+.lastline,.small.lastline{color:#eef2f9}
+a.small{color:#dcc684}
 .hidden{display:none}
 #screen{min-height:100vh}
-.timer{font-size:2rem;text-align:center;margin:12px 0}
-.splitcue{font-size:1.5rem;text-align:center;font-weight:700;color:#38bdf8;margin:4px 0 10px}
-.wok-clock{position:sticky;top:0;z-index:5;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px;margin:8px 0 12px;text-align:center}
-.wok-clock .t{font-size:1.8rem;font-variant-numeric:tabular-nums;color:#38bdf8}
-.wok-clock .l{font-size:0.8rem;color:#94a3b8}
-.cue{background:#0f172a;padding:8px;border-radius:6px;margin:6px 0;font-size:0.9rem}
-.how{background:#0f172a;padding:10px;border-radius:6px;margin:6px 0;font-size:0.92rem;color:#cbd5e1}
-.disclaimer{font-size:0.75rem;color:#f87171;margin:12px 0;padding:8px;border:1px solid #7f1d1d;border-radius:6px}
-.hint{font-size:0.9rem;color:#fbbf24;margin:8px 0 12px;padding:8px;background:#1e293b;border-radius:8px;border:1px solid #854d0e}
-.dots{display:flex;gap:8px;margin:8px 0 4px}
-.dot{flex:1;height:8px;border-radius:99px;background:#334155}
-.dot.on{background:#16a34a}
-a{color:#38bdf8}
-.setrow{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #334155}
-.setrow .sn{font-size:0.95rem;color:#94a3b8;font-weight:600}
+.timer{font-size:2rem;text-align:center;margin:12px 0;color:#eef2f9}
+.splitcue{font-size:1.5rem;text-align:center;font-weight:700;color:#dcc684;margin:4px 0 10px}
+.wok-clock{position:sticky;top:0;z-index:5;background:#0d1c38;border:1px solid #233a63;border-radius:14px;padding:10px;margin:8px 0 12px;text-align:center}
+.wok-clock .t{font-size:1.8rem;font-variant-numeric:tabular-nums;color:#dcc684}
+.wok-clock .l{font-size:0.8rem;color:#93a4c2}
+.cue{background:#0d1c38;padding:8px;border-radius:10px;margin:6px 0;font-size:0.9rem}
+.how{background:#0d1c38;padding:10px;border-radius:10px;margin:6px 0;font-size:0.92rem;color:#eef2f9}
+.disclaimer,.guard{font-size:0.75rem;color:#f87171;margin:12px 0;padding:8px 12px;background:#152a4e;border:none;border-left:3px solid #f87171;border-radius:0 14px 14px 0}
+.hint{font-size:0.9rem;color:#bcc9df;margin:8px 0 12px}
+.dots{display:flex;gap:8px;margin:10px 0 14px}
+.dot{flex:1;height:6px;border-radius:99px;background:#233a63}
+.dot.on{background:#4fae7c}
+a{color:#dcc684}
+.setrow{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #233a63}
+.setrow .sn{font-size:0.95rem;color:#93a4c2;font-weight:600}
 .setrow input{width:88px;min-height:48px;font-size:1.2rem;text-align:center;padding:8px}
 .stepper{display:flex;align-items:center;gap:6px}
-.slbl{font-size:0.85rem;color:#94a3b8;min-width:44px;flex:0 0 auto}
-button.step{width:48px;min-width:48px;min-height:48px;padding:0;margin:0;font-size:1.4rem;flex:0 0 48px}
-button.setdone{width:48px;min-height:48px;padding:0;margin:0;font-size:1.2rem;flex:0 0 48px}
+.slbl{font-size:0.85rem;color:#93a4c2;min-width:44px;flex:0 0 auto}
+button.step{width:48px;min-width:48px;min-height:48px;padding:0;margin:0;font-size:1.4rem;flex:0 0 48px;background:#0d1c38;color:#eef2f9;border:1px solid #233a63}
+button.setdone{width:48px;min-height:48px;padding:0;margin:0;font-size:1.2rem;flex:0 0 48px;background:#152a4e;color:#dcc684;border:1px solid #233a63}
+button.setdone.selected{background:#dcc684;color:#1c1a0e}
 .jumplist{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-.jumplist a{display:inline-block;background:#1e293b;border:1px solid #334155;padding:8px 10px;border-radius:8px;font-size:0.85rem;text-decoration:none;color:#e2e8f0}
-.jumplist a.on{background:#0284c7;border-color:#0284c7;color:#fff}
-.jumplist a.did{background:#334155;color:#94a3b8;border-color:#334155}
-.jumplist a.did.on{background:#0284c7;color:#fff;border-color:#0284c7}
+.jumplist a{display:inline-block;background:#152a4e;border:1px solid #233a63;padding:8px 10px;border-radius:14px;font-size:0.85rem;text-decoration:none;color:#eef2f9}
+.jumplist a.on{background:#dcc684;border-color:#dcc684;color:#1c1a0e}
+.jumplist a.did{background:#0d1c38;color:#93a4c2;border-color:#233a63}
+.jumplist a.did.on{background:#dcc684;color:#1c1a0e;border-color:#dcc684}
 .excard{scroll-margin-top:84px}
-.barwrap{background:#334155;border-radius:4px;height:10px;margin:4px 0 10px}
-.bar{background:#16a34a;height:10px;border-radius:4px}
+.barwrap{background:#233a63;border-radius:4px;height:10px;margin:4px 0 10px}
+.bar{background:#dcc684;height:10px;border-radius:4px}
 .stats{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
-.stat{flex:1 1 40%;background:#0f172a;padding:10px;border-radius:8px}
-.stat .n{font-size:1.15rem;color:#38bdf8}
-.stat .l{font-size:0.75rem;color:#94a3b8}
+.stat{flex:1 1 40%;background:#0d1c38;padding:10px;border-radius:14px;border:1px solid #233a63}
+.stat .n{font-size:1.15rem;color:#dcc684}
+.stat .l{font-size:0.75rem;color:#93a4c2}
 button.tiny{width:auto;display:inline-block;padding:8px 12px;margin:8px 6px 0 0;font-size:0.9rem}
-button.bw{background:#334155;min-height:48px;margin:0}
-button.bw.on{background:#16a34a}
+button.bw{background:#0d1c38;color:#eef2f9;border:1px solid #233a63;min-height:48px;margin:0}
+button.bw.on{background:#dcc684;color:#1c1a0e;border-color:#dcc684}
 #startBtn{position:sticky;bottom:8px;z-index:6}
 #startBtn[hidden],#startBtn.hidden{display:none}
-.note-scrim{position:fixed;inset:0;background:#02061799;z-index:29}
-.note-pop{position:fixed;left:12px;right:12px;top:18%;max-width:456px;margin:0 auto;z-index:30;border:1px solid #475569}
+.note-scrim{position:fixed;inset:0;background:#070d18cc;z-index:29}
+.note-pop{position:fixed;left:12px;right:12px;top:18%;max-width:456px;margin:0 auto;z-index:30;border:1px solid #233a63}
+.lede{color:#bcc9df;margin:0 0 18px}
+.num{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#93a4c2;font-weight:600;margin-bottom:6px}
+.yn{display:flex;gap:8px;margin-top:10px}
+.yn button{flex:1;margin:0;background:#0d1c38;border:1px solid #233a63;color:#eef2f9;box-shadow:none}
+.yn button:hover,.yn button:focus{background:#0d1c38;border-color:#233a63;color:#eef2f9}
+.screen-card button.selected,.yn button.selected,.yn button.selected:hover,.yn button.selected:focus{background:#4fae7c;border-color:#4fae7c;color:#eef2f9}
+button.link{width:auto;background:transparent;color:#dcc684;padding:8px 0;margin:4px 12px 4px 0;text-align:left;font-weight:600}
+.pills{display:flex;gap:8px;margin:8px 0}
+button.pill{flex:1;width:auto;margin:0;background:#152a4e;color:#eef2f9;border:1px solid #233a63}
+.row-between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tag-pavel{display:inline-block;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;background:#4fae7c;color:#eef2f9;border-radius:99px;padding:4px 8px;font-weight:700}
+.footlinks{display:flex;flex-wrap:wrap;gap:4px 8px;margin:16px 0 8px}
 </style>
 </head>
 <body>
 <div id="app">
   <div id="onboard" class="screen">
-    <h1>Personal Workout</h1>
-    <p class="small">Tour-level golf strength • dumbbell &amp; kettlebell</p>
-    <div class="disclaimer">Not medical advice. Consult a physician. Stop on sharp pain. Form first.</div>
-    <h2>Self-screen (required on first use)</h2>
+    <p class="eyebrow">Self-screen</p>
+    <h1 class="hero">Three quick checks before you lift.</h1>
     <div class="dots" aria-hidden="true">
       <div class="dot" id="dot-balance"></div>
       <div class="dot" id="dot-overhead"></div>
       <div class="dot" id="dot-hinge"></div>
     </div>
-    <p class="hint" id="screenHint">Buttons start blue. Tap Yes or No on each check — it turns green. All three answers unlock the next screen. Skip leaves checks unanswered and does <b>not</b> lock lifts.</p>
-    <div class="card" data-screen="balance">
+    <p class="hint" id="screenHint">Tap Yes or No on each check. All three answers unlock the next screen. Skip leaves checks unanswered and does <b>not</b> lock lifts.</p>
+    <div class="card screen-card" data-screen="balance">
+      <p class="num">01</p>
       <p>Can you stand on one leg 10s each side without support?</p>
-      <button onclick="passScreen('balance',true,this)">Yes</button>
-      <button onclick="passScreen('balance',false,this)">No / wobbly</button>
+      <div class="yn">
+        <button type="button" onclick="passScreen('balance',true,this)">Yes</button>
+        <button type="button" onclick="passScreen('balance',false,this)">No / wobbly</button>
+      </div>
     </div>
-    <div class="card" data-screen="overhead">
+    <div class="card screen-card" data-screen="overhead">
+      <p class="num">02</p>
       <p>Pain-free overhead reach both arms?</p>
-      <button onclick="passScreen('overhead',true,this)">Yes</button>
-      <button onclick="passScreen('overhead',false,this)">Limited / pain</button>
+      <div class="yn">
+        <button type="button" onclick="passScreen('overhead',true,this)">Yes</button>
+        <button type="button" onclick="passScreen('overhead',false,this)">Limited / pain</button>
+      </div>
     </div>
-    <div class="card" data-screen="hinge">
+    <div class="card screen-card" data-screen="hinge">
+      <p class="num">03</p>
       <p>Comfortable hip hinge (touch mid-shin with flat back)?</p>
-      <button onclick="passScreen('hinge',true,this)">Yes</button>
-      <button onclick="passScreen('hinge',false,this)">No / rounded</button>
+      <div class="yn">
+        <button type="button" onclick="passScreen('hinge',true,this)">Yes</button>
+        <button type="button" onclick="passScreen('hinge',false,this)">No / rounded</button>
+      </div>
     </div>
-    <button type="button" class="secondary" id="skipBtn" onclick="skipSelfScreen()">Skip self-screen</button>
-    <button type="button" id="startBtn" class="hidden ready" hidden onclick="startApp()">Unlock &amp; Start — Personal Workout</button>
+    <div class="guard">Not medical advice. Consult a physician. Stop on sharp pain. Form first.</div>
+    <button type="button" class="link" id="skipBtn" onclick="skipSelfScreen()">Skip self-screen</button>
+    <button type="button" id="startBtn" class="hidden ready" hidden onclick="startApp()">Unlock &amp; Start</button>
   </div>
 
   <div id="main" class="screen hidden">
-    <h1>Personal Workout</h1>
-    <div class="disclaimer">Stop on sharp pain. Rate of Perceived Exertion (RPE) 6–7 target. Deload if consecutive high RPE or any pain.</div>
-    <h2>Pre-round stretch</h2>
-    <p class="small">Stretch only. Pick how much time you have. None of these start lifts.</p>
-    <button onclick="startWarmup('short')">Stretch (5 min)</button>
-    <button onclick="startWarmup('full')">Stretch (12 min)</button>
-    <button onclick="startWarmup('long')">Stretch (18 min)</button>
-    <button onclick="startTemplate('A')">Workout A</button>
-    <p class="small">Bar hang, squat, RDL, press, row, pull-up, suitcase, reverse lunge, chop, Pallof. Same lifts every A day.</p>
-    <button onclick="startTemplate('B')">Workout B</button>
-    <p class="small">Bar hang, offset squat, single-leg RDL, floor press, row, pull-up, farmer, lateral lunge, lift, swing. Same lifts every B day.</p>
-    <button onclick="startTemplate('C')">Workout C</button>
-    <p class="small">Short Pavel day. Swing, get-up, windmill, clean. Four lifts only.</p>
-    <button type="button" class="tiny secondary" onclick="showPavelNote()">What is a Pavel day?</button>
-    <button class="secondary" onclick="startLast()">Same as last</button>
-    <button class="secondary" onclick="showHistory()">History &amp; Progress</button>
-    <button class="secondary" onclick="showSelfVideo()">Self-video (optional)</button>
-    <button class="secondary" onclick="redoSelfScreen()">Redo self-screen</button>
+    <div id="homeDash">
+      <p class="eyebrow">Personal workout</p>
+      <h1 class="hero">Golf strength.</h1>
+      <p class="lede">Tour-level dumbbell and kettlebell. About 60. Form first.</p>
+      <div class="card">
+        <p class="eyebrow">Suggested</p>
+        <h2 id="suggestTitle">Workout A</h2>
+        <p class="small lastline" id="lastDoneLine">No session logged yet.</p>
+        <p class="small" id="suggestBlurb">Bar hang, squat, RDL, press, row, pull-up, suitcase, reverse lunge, chop, Pallof.</p>
+        <button type="button" onclick="startSuggested()">Start session</button>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Workout B</p>
+        <p class="small">Bar hang, offset squat, single-leg RDL, floor press, row, pull-up, farmer, lateral lunge, lift, swing.</p>
+        <button type="button" class="secondary" onclick="startTemplate('B')">Start B</button>
+      </div>
+      <div class="card">
+        <div class="row-between">
+          <p class="eyebrow">Workout C</p>
+          <span class="tag-pavel">Pavel</span>
+        </div>
+        <p class="small">Short Pavel day. Swing, get-up, windmill, clean. Four lifts only.</p>
+        <button type="button" class="secondary" onclick="startTemplate('C')">Start C</button>
+        <button type="button" class="link" onclick="showPavelNote()">What is a Pavel day?</button>
+      </div>
+      <p class="eyebrow">Stretch</p>
+      <div class="pills">
+        <button type="button" class="pill" onclick="startWarmup('short')">5 min</button>
+        <button type="button" class="pill" onclick="startWarmup('full')">12 min</button>
+        <button type="button" class="pill" onclick="startWarmup('long')">18 min</button>
+      </div>
+      <p class="small">Stretch only. None of these start lifts.</p>
+      <div class="footlinks">
+        <button type="button" class="link" onclick="startLast()">Same as last</button>
+        <button type="button" class="link" onclick="showHistory()">History</button>
+        <button type="button" class="link" onclick="showSelfVideo()">Self-video</button>
+        <button type="button" class="link" onclick="redoSelfScreen()">Redo self-screen</button>
+      </div>
+      <div class="guard">Stop on sharp pain. Rate of Perceived Exertion (RPE) 6–7 target. Deload if consecutive high RPE or any pain.</div>
+    </div>
     <div id="content"></div>
   </div>
 </div>
@@ -307,13 +357,29 @@ function passScreen(key, val, btn){
   refreshUnlock();
 }
 
+function restoreScreenUI(){
+  ['balance','overhead','hinge'].forEach(key => {
+    const answered = PWLogic.isAnsweredScreen(screen[key]);
+    const dot = document.getElementById('dot-' + key);
+    if(dot) dot.classList.toggle('on', answered);
+    const card = document.querySelector('[data-screen="'+key+'"]');
+    if(!card) return;
+    const buttons = card.querySelectorAll('.yn button');
+    buttons.forEach(b => b.classList.remove('selected'));
+    if(answered && buttons.length >= 2){
+      buttons[screen[key] ? 0 : 1].classList.add('selected');
+    }
+  });
+  refreshUnlock();
+}
+
 function refreshUnlock(){
   const hint = document.getElementById('screenHint');
   const startBtn = document.getElementById('startBtn');
   if(!startBtn) return;
   const n = ['balance','overhead','hinge'].filter(k => PWLogic.isAnsweredScreen(screen[k])).length;
   if(n < 3){
-    if(hint) hint.textContent = n + ' of 3 answered. Tap Yes or No on each check, or Skip. Skip does not lock lifts.';
+    if(hint) hint.textContent = n + '/3 answered. Tap Yes or No on each check, or Skip. Skip does not lock lifts.';
     startBtn.classList.add('hidden');
     startBtn.setAttribute('hidden','');
   } else {
@@ -328,6 +394,63 @@ function startApp(){
   try { localStorage.setItem('pw_screen', JSON.stringify(screen)); } catch(e){}
   document.getElementById('onboard').classList.add('hidden');
   document.getElementById('main').classList.remove('hidden');
+  showHome();
+}
+
+function hideHome(){
+  const d = document.getElementById('homeDash');
+  if(d) d.classList.add('hidden');
+}
+
+function showHome(){
+  const d = document.getElementById('homeDash');
+  if(d) d.classList.remove('hidden');
+  paintHome();
+}
+
+function lastDoneInfo(){
+  const label = localStorage.getItem('pw_last_label') || '';
+  let ids = [];
+  try { ids = JSON.parse(localStorage.getItem('pw_last_ids') || '[]'); } catch(e){ ids = []; }
+  if(!Array.isArray(ids)) ids = [];
+  const sessions = history.filter(h => h.id === '_session' && h.date);
+  const last = sessions.length ? sessions[sessions.length-1] : null;
+  const date = last && last.date ? last.date : '';
+  const elapsed = last ? (last.elapsed || (last.duration != null ? fmtDuration(last.duration) : '')) : '';
+  return {label:label, ids:ids, date:date, elapsed:elapsed, hasLast: ids.length > 0};
+}
+
+function paintHome(){
+  const info = lastDoneInfo();
+  const title = document.getElementById('suggestTitle');
+  const line = document.getElementById('lastDoneLine');
+  const blurb = document.getElementById('suggestBlurb');
+  if(info.hasLast){
+    if(title) title.textContent = info.label || 'Same as last';
+    if(blurb){
+      if(info.label === 'Workout C') blurb.textContent = 'Short Pavel day. Swing, get-up, windmill, clean. Four lifts only.';
+      else if(info.label === 'Workout B') blurb.textContent = 'Bar hang, offset squat, single-leg RDL, floor press, row, pull-up, farmer, lateral lunge, lift, swing.';
+      else blurb.textContent = 'Bar hang, squat, RDL, press, row, pull-up, suitcase, reverse lunge, chop, Pallof.';
+    }
+  } else {
+    if(title) title.textContent = 'Workout A';
+    if(blurb) blurb.textContent = 'Bar hang, squat, RDL, press, row, pull-up, suitcase, reverse lunge, chop, Pallof.';
+  }
+  if(line){
+    if(info.date){
+      const bits = [info.date];
+      if(info.elapsed) bits.push(info.elapsed);
+      line.textContent = 'Last done: ' + bits.join(' · ');
+    } else {
+      line.textContent = 'No session logged yet.';
+    }
+  }
+}
+
+function startSuggested(){
+  const info = lastDoneInfo();
+  if(info.hasLast) startLast();
+  else startTemplate('A');
 }
 
 function skipSelfScreen(){
@@ -339,7 +462,7 @@ function redoSelfScreen(){
   document.getElementById('main').classList.add('hidden');
   document.getElementById('onboard').classList.remove('hidden');
   document.getElementById('content').innerHTML = '';
-  refreshUnlock();
+  restoreScreenUI();
 }
 
 const WARMUP = [
@@ -456,6 +579,7 @@ function startWarmup(mode){
   warmupIndex = 0;
   warmupHalf = 0;
   clearWarmupTimers();
+  hideHome();
   renderWarmupStep();
 }
 
@@ -481,7 +605,7 @@ function renderWarmupStep(){
       <button onclick="startWarmup('short')">Stretch (5 min)</button>
       <button onclick="startWarmup('full')">Stretch (12 min)</button>
       <button onclick="startWarmup('long')">Stretch (18 min)</button>
-      <button onclick="document.getElementById('content').innerHTML=''">Done, go play</button>
+      <button onclick="clearContent()">Done, go play</button>
       <button class="secondary" onclick="startTemplate('A')">Start Workout A</button>
       <button class="secondary" onclick="startTemplate('B')">Start Workout B</button>
       <button class="secondary" onclick="startTemplate('C')">Start Workout C</button>
@@ -611,6 +735,7 @@ function beginWorkout(selected, label){
   localStorage.setItem('pw_last_ids', JSON.stringify(selected.map(e => e.id)));
   localStorage.setItem('pw_last_label', label);
   startWorkoutClock();
+  hideHome();
   renderWorkout();
 }
 
@@ -838,6 +963,16 @@ function toggleOld(id){
 
 function clearContent(){
   document.getElementById('content').innerHTML = '';
+  showHome();
+}
+
+function abandonSession(){
+  readDraft();
+  if(typeof stopWorkoutClock === 'function') stopWorkoutClock();
+  if(typeof clearWarmupTimers === 'function') clearWarmupTimers();
+  currentWorkout = [];
+  document.getElementById('content').innerHTML = '';
+  showHome();
 }
 
 function lastDaySets(ex){
@@ -958,6 +1093,7 @@ function renderWorkout(){
   if(liftIndex < 0) liftIndex = 0;
   if(liftIndex >= total) liftIndex = Math.max(0, total - 1);
   let html = `<div class="wok-clock"><div class="l">Session clock</div><div class="t" id="wokclock">${live}</div></div>
+    <button type="button" class="link" onclick="abandonSession()">Home</button>
     <h2>${sessionLabel}</h2>
     ${sessionLabel === 'Workout C' ? '<button type="button" class="tiny secondary" onclick="showPavelNote()">What is a Pavel day?</button>' : ''}
     <p>Lift ${liftIndex+1} of ${total}</p>
@@ -1082,10 +1218,12 @@ function saveSession(){
     if(high>=3) msg += ' Suggestion: deload 20% next session.';
   }
   alert(msg);
+  showHome();
   document.getElementById('content').innerHTML = '<div class="card"><h2>Session logged</h2><p>This workout took <b>' + dur + '</b>.</p></div>';
 }
 
 function showHistory(){
+  hideHome();
   const c = document.getElementById('content');
   const back = '<button class="secondary" onclick="clearContent()">Back</button>';
   if(!history.length){ c.innerHTML='<p>No history yet.</p>'+back; return; }
@@ -1196,6 +1334,7 @@ function showHistory(){
 }
 
 function showSelfVideo(){
+  hideHome();
   document.getElementById('content').innerHTML = `
     <h2>Self-video (optional archive)</h2>
     <p class="small">Record yourself. Review later vs the how-to and cues. Not scored. Phone angle is limited for multi-plane moves.</p>
@@ -1227,7 +1366,7 @@ try {
     if(parsed && typeof parsed === 'object'){
       screen = Object.assign({balance:null, overhead:null, hinge:null, skipped:false}, parsed);
       if(PWLogic.screenComplete(screen)) startApp();
-      else refreshUnlock();
+      else restoreScreenUI();
     }
   }
 } catch(e){}
