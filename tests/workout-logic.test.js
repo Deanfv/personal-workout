@@ -4,7 +4,7 @@ var L = require('../workout-logic.js');
 
 var TEMPLATE_A = ['hang','goblet','hkpress','rdl','row','reverse_lunge','pallof'];
 var TEMPLATE_B = ['hang','swing','floorpress','offset_squat','row','farmer','lift'];
-var TEMPLATE_C = ['swing_1a','kb_clean','tgu_half','windmill'];
+var TEMPLATE_C = ['swing_1a','kb_clean','tgu_half','windmill','suitcase'];
 var ALTS = {
   rdl: ['hipthrust','goblet'],
   slrdl: ['rdl','reverse_lunge','hipthrust'],
@@ -71,8 +71,8 @@ var passB = resolve(TEMPLATE_B, {balance:true, overhead:true, hinge:true});
 assert.deepStrictEqual(passB, TEMPLATE_B);
 assert.strictEqual(TEMPLATE_B[1], 'swing', 'Workout B puts the two-hand swing second, while fresh');
 assert.deepStrictEqual(resolve(TEMPLATE_C, {balance:true, overhead:true, hinge:true}), TEMPLATE_C);
-assert.strictEqual(TEMPLATE_C.length, 4, 'Charlie stays four lifts');
-assert.deepStrictEqual(TEMPLATE_C, ['swing_1a','kb_clean','tgu_half','windmill']);
+assert.strictEqual(TEMPLATE_C.length, 5, 'Charlie is five lifts');
+assert.deepStrictEqual(TEMPLATE_C, ['swing_1a','kb_clean','tgu_half','windmill','suitcase']);
 assert.ok(TEMPLATE_A.indexOf('swing_1a') === -1);
 assert.ok(TEMPLATE_B.indexOf('swing_1a') === -1);
 assert.ok(TEMPLATE_A.indexOf('windmill') === -1);
@@ -123,12 +123,12 @@ assert.ok(!('shouldHangPrimer' in L));
 assert.ok(!('HANG_PRIMER_SECS' in L));
 assert.deepStrictEqual(TEMPLATE_A, ['hang','goblet','hkpress','rdl','row','reverse_lunge','pallof']);
 assert.deepStrictEqual(TEMPLATE_B, ['hang','swing','floorpress','offset_squat','row','farmer','lift']);
-assert.deepStrictEqual(TEMPLATE_C, ['swing_1a','kb_clean','tgu_half','windmill']);
+assert.deepStrictEqual(TEMPLATE_C, ['swing_1a','kb_clean','tgu_half','windmill','suitcase']);
 assert.strictEqual(TEMPLATE_A[0], 'hang');
 assert.strictEqual(TEMPLATE_B[0], 'hang');
 assert.strictEqual(TEMPLATE_B[1], 'swing');
 assert.strictEqual(TEMPLATE_A.length, 7);
 assert.strictEqual(TEMPLATE_B.length, 7);
-assert.strictEqual(TEMPLATE_C.length, 4);
+assert.strictEqual(TEMPLATE_C.length, 5);
 
 console.log('workout-logic tests passed');
