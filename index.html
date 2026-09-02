@@ -91,6 +91,12 @@ button.pill{flex:1;width:auto;margin:0;background:#152a4e;color:#eef2f9;border:1
 .footlinks{display:flex;flex-wrap:wrap;gap:4px 8px;margin:16px 0 8px}
 .card.suggested{border-color:#dcc684}
 .card.suggested .card-start{background:#dcc684;color:#1c1a0e;border:none}
+.tag-mins{display:inline-block;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;background:#0d1c38;color:#dcc684;border:1px solid #233a63;border-radius:99px;padding:4px 8px;font-weight:700}
+.hips-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}
+.hips-toolbar .pills{flex:1;margin:0}
+.hips-toolbar .link{margin:0;padding:8px 4px;flex:0 0 auto}
+.demo-frame{min-height:120px;border:1px dashed #233a63;border-radius:10px;background:#0d1c38;display:flex;align-items:center;justify-content:center;color:#93a4c2;font-size:0.85rem;margin:8px 0;padding:12px;text-align:center}
+.demo-slot video{border-radius:8px;background:#000;margin-top:8px;width:100%}
 </style>
 </head>
 <body>
@@ -163,6 +169,14 @@ button.pill{flex:1;width:auto;margin:0;background:#152a4e;color:#eef2f9;border:1
         <button type="button" class="card-start" onclick="startTemplate('C')">Start Workout C</button>
         <button type="button" class="link" onclick="showPavelNote()">What is a Pavel day?</button>
       </div>
+      <div class="card" id="cardHips" data-session="hips">
+        <div class="row-between">
+          <h2>Hips</h2>
+          <span class="tag-mins">8 min</span>
+        </div>
+        <p class="small">Daily left-hip work. About 8 minutes. Not a lift day.</p>
+        <button type="button" class="secondary card-start" onclick="startHips()">Start Hips</button>
+      </div>
       <p class="eyebrow">Stretch</p>
       <div class="pills">
         <button type="button" class="pill" onclick="startWarmup('short')">5 min</button>
@@ -188,7 +202,7 @@ button.pill{flex:1;width:auto;margin:0;background:#152a4e;color:#eef2f9;border:1
   <button type="button" onclick="hidePavelNote()">Got it</button>
 </div>
 
-<script src="workout-logic.js?v=20260829c"></script>
+<script src="workout-logic.js?v=20260902a"></script>
 <script>
 const EXERCISES = [
   {id:'goblet', name:'Goblet Squat', cat:'squat',
@@ -421,7 +435,7 @@ function lastDoneInfo(){
   let ids = [];
   try { ids = JSON.parse(localStorage.getItem('pw_last_ids') || '[]'); } catch(e){ ids = []; }
   if(!Array.isArray(ids)) ids = [];
-  const sessions = history.filter(h => h.id === '_session' && h.date);
+  const sessions = history.filter(h => PWLogic.isLiftSession(h) && h.date);
   const last = sessions.length ? sessions[sessions.length-1] : null;
   const date = last && last.date ? last.date : '';
   const elapsed = last ? (last.elapsed || (last.duration != null ? fmtDuration(last.duration) : '')) : '';
@@ -430,9 +444,7 @@ function lastDoneInfo(){
 
 function suggestedWhich(){
   const info = lastDoneInfo();
-  if(info.hasLast && info.label === 'Workout A') return 'A';
-  if(info.hasLast && info.label === 'Workout B') return 'B';
-  return 'C';
+  return PWLogic.suggestedWhich(info.label, info.hasLast);
 }
 
 function paintHome(){
@@ -459,6 +471,14 @@ function paintHome(){
     const btn = card.querySelector('.card-start');
     if(btn) btn.classList.toggle('secondary', !on);
   });
+  const hips = document.getElementById('cardHips');
+  if(hips){
+    hips.classList.remove('suggested');
+    const mark = hips.querySelector('.suggest-mark');
+    if(mark) mark.classList.add('hidden');
+    const btn = hips.querySelector('.card-start');
+    if(btn) btn.classList.add('secondary');
+  }
 }
 
 function skipSelfScreen(){
@@ -733,6 +753,41 @@ const TEMPLATE_ALTS = {
 };
 
 let sessionLabel = 'Workout';
+let sessionKind = 'lift';
+let hipsMode = 'daily';
+let hipsPhase = 'setup';
+let hipsRound = 1;
+let hipsStep = 0;
+
+const HIPS_DAILY = [
+  {id:'hamstrings', name:'Activate hamstrings', secs:30,
+    how:'Gently squeeze the roller or folded towel between the knees.',
+    cues:'Light squeeze. Hamstrings on. Do not crush.'},
+  {id:'left_groin', name:'Activate left groin / IR', secs:30,
+    how:'Keep the squeeze. Pull the LEFT hip and knee down toward the floor.',
+    cues:'Left hip and knee down. Keep the squeeze. Lead side is left.'},
+  {id:'left_owns', name:'Remove the right side', secs:30,
+    how:'Let the right side stop helping so the left owns the position.',
+    cues:'Right quiet. Left owns it.'}
+];
+
+const HIPS_LOAD = [
+  {id:'hips_iso_hinge', name:'Isometric hinge', cat:'hinge',
+    how:'Stand on the LEFT foot. Drop the right knee toward the floor. Hinge. Hands on the chest. Hard 20–30 seconds. Stop short of failure — not a burnout.',
+    cues:'Left owns it. Hard 20–30s. Stop short. Pavel-style, not grind.',
+    mods:'Hold a stick. Shorter hold. Bodyweight only.',
+    sets:'3×20–30s'},
+  {id:'hips_kickstand_rdl', name:'Kickstand RDL', cat:'hinge',
+    how:'Left foot planted. Left knee against a bench so it cannot drift. Right toes for balance. Mass over the left. Light kettlebell.',
+    cues:'Left knee pinned. Mass over left. Light bell. 3×6.',
+    mods:'Bodyweight. Shorter hinge.',
+    sets:'3×6'},
+  {id:'hips_ir_hinge', name:'Low cable or band IR hinge', cat:'hinge',
+    how:'Low cable or band internal-rotation hinge. If you have no cable, set a band from a low pin.',
+    cues:'IR as you hinge. 3×8. Band-from-low-pin if no cable.',
+    mods:'Band from a low pin. Lighter.',
+    sets:'3×8'}
+];
 
 function lockedIds(){
   return PWLogic.lockedIdsFromScreen(screen);
@@ -755,6 +810,7 @@ function emptyDraftSets(n){
 }
 
 function beginWorkout(selected, label){
+  sessionKind = 'lift';
   currentWorkout = selected;
   sessionLabel = label;
   liftIndex = 0;
@@ -789,7 +845,9 @@ function startLast(){
   if(!ids.length && currentWorkout.length) ids = currentWorkout.map(e => e.id);
   if(!ids.length){
     const prev = [];
-    history.forEach(h => { if(h.id && h.id !== '_session' && !prev.includes(h.id)) prev.push(h.id); });
+    history.forEach(h => {
+      if(h.id && h.id !== '_session' && h.id !== '_hips' && h.type !== 'hips' && !prev.includes(h.id)) prev.push(h.id);
+    });
     ids = prev.slice(0,8);
   }
   if(!ids.length){
@@ -797,6 +855,10 @@ function startLast(){
     return;
   }
   const label = localStorage.getItem('pw_last_label') || 'Same as last';
+  if(/^Hips/.test(label)){
+    alert('No last workout yet. Start A, B, or C first.');
+    return;
+  }
   const lifts = resolveTemplate(ids);
   if(label === 'Workout A' || label === 'Workout B'){
     pendingAfterWarmup = {lifts:lifts, label:label};
@@ -1016,13 +1078,21 @@ function abandonSession(){
   readDraft();
   if(typeof stopWorkoutClock === 'function') stopWorkoutClock();
   if(typeof clearWarmupTimers === 'function') clearWarmupTimers();
+  if(typeof stopCam === 'function') stopCam();
+  sessionKind = 'lift';
+  hipsMode = 'daily';
+  hipsPhase = 'setup';
   currentWorkout = [];
   document.getElementById('content').innerHTML = '';
   showHome();
 }
 
 function lastDaySets(ex){
-  const rows = history.filter(h => h.id === ex.id && h.id !== '_session' && h.date);
+  const rows = history.filter(h => {
+    if(!h || h.id !== ex.id || h.id === '_session' || h.id === '_hips' || !h.date) return false;
+    if(sessionKind === 'hips') return h.type === 'hips';
+    return h.type !== 'hips';
+  });
   if(!rows.length) return [];
   let newest = rows[0].date;
   rows.forEach(h => { if(String(h.date) > String(newest)) newest = h.date; });
@@ -1132,21 +1202,249 @@ function hidePavelNote(){
   if(scrim) scrim.classList.add('hidden');
 }
 
-function renderWorkout(){
-  const c = document.getElementById('content');
+function sessionClockHtml(){
   const live = workoutStart ? fmtTime(Math.floor((Date.now() - workoutStart) / 1000)) : '0:00';
-  const total = currentWorkout.length;
-  if(liftIndex < 0) liftIndex = 0;
-  if(liftIndex >= total) liftIndex = Math.max(0, total - 1);
-  let html = `<div class="wok-clock">
+  return `<div class="wok-clock">
     <button type="button" class="tiny secondary wok-home" onclick="abandonSession()">Home</button>
     <div class="l">Session clock</div>
     <div class="t" id="wokclock">${live}</div>
+  </div>`;
+}
+
+function hipsModeLead(){
+  if(hipsMode === 'load') return '2×/week strength. Not a stretch timer. RPE 6–7. Stop short.';
+  if(hipsMode === 'pattern') return 'Club in hand. About 5 minutes. Left hip clears first.';
+  return 'About 8 minutes. Left-hip reposition for a right-handed golfer (lead = left).';
+}
+
+function hipsModeBar(){
+  return `<div class="hips-toolbar">
+    <div class="pills hips-modes">
+      <button type="button" class="pill${hipsMode==='daily'?' selected':''}" onclick="setHipsMode('daily')">Daily</button>
+      <button type="button" class="pill${hipsMode==='load'?' selected':''}" onclick="setHipsMode('load')">Load</button>
+    </div>
+    <button type="button" class="link hips-pattern${hipsMode==='pattern'?' selected':''}" onclick="setHipsMode('pattern')">Pattern</button>
   </div>
+  <p class="small">${hipsModeLead()}</p>`;
+}
+
+function hipsDemoSlot(cues){
+  const cue = cues ? `<div class="cue"><b>Cues:</b> ${cues}</div>` : '';
+  return `${cue}
+    <div class="demo-slot">
+      <p class="small">Demo</p>
+      <div class="demo-frame">Your photo or self-video goes here. No Instagram or YouTube rip.</div>
+      <button type="button" class="tiny secondary" onclick="toggleHipsCam(this)">Self-video</button>
+      <video class="hidden" autoplay muted playsinline></video>
+    </div>`;
+}
+
+function startHips(){
+  pendingAfterWarmup = null;
+  sessionKind = 'hips';
+  hipsMode = 'daily';
+  hipsPhase = 'setup';
+  hipsRound = 1;
+  hipsStep = 0;
+  currentWorkout = [];
+  hideHome();
+  startWorkoutClock();
+  renderHipsDaily();
+}
+
+function setHipsMode(mode){
+  if(!PWLogic.isHipsMode(mode)) mode = 'daily';
+  clearWarmupTimers();
+  stopCam();
+  if(sessionKind === 'hips' && hipsMode === 'load') readDraft();
+  hipsMode = mode;
+  sessionKind = 'hips';
+  hideHome();
+  if(!workoutStart) startWorkoutClock();
+  if(mode === 'load'){
+    beginHipsLoad();
+    return;
+  }
+  currentWorkout = [];
+  if(mode === 'pattern'){
+    renderHipsPattern();
+    return;
+  }
+  hipsPhase = 'setup';
+  hipsRound = 1;
+  hipsStep = 0;
+  renderHipsDaily();
+}
+
+function beginHipsLoad(){
+  sessionKind = 'hips';
+  hipsMode = 'load';
+  currentWorkout = HIPS_LOAD.slice();
+  sessionLabel = 'Hips · Load';
+  liftIndex = 0;
+  swapCursor = {};
+  setCounts = currentWorkout.map(e => defaultSetCount(e));
+  howOpen = currentWorkout.map(() => true);
+  liftDone = currentWorkout.map(() => false);
+  draft = currentWorkout.map(e => emptyDraftSets(defaultSetCount(e)));
+  if(!workoutStart) startWorkoutClock();
+  hideHome();
+  renderWorkout();
+}
+
+function renderHipsDaily(){
+  const c = document.getElementById('content');
+  if(hipsPhase === 'ql'){
+    c.innerHTML = `
+      ${sessionClockHtml()}
+      <h2>Hips · Daily</h2>
+      ${hipsModeBar()}
+      <div class="card">
+        <b>Optional QL</b> <span class="small">3×6 each side</span>
+        <div class="how"><b>How to do it</b><br>
+          3D stretch. Order: rotate, then sidebend, then hinge.
+          Foot on a wall or chair at knee height. Light DB hanging in the down hand.
+          This is the stretch that works when generic low-back stretching does not.
+        </div>
+        ${hipsDemoSlot('Rotate, then sidebend, then hinge. Light DB in the down hand. Skip if it does not belong today.')}
+        <p class="small">Optional landmine/bar variation: tuck the tailbone, round forward, open the hips. Skip if no bar.</p>
+      </div>
+      <button type="button" class="secondary" onclick="logHipsMode('daily')">Skip QL</button>
+      <button type="button" onclick="logHipsMode('daily')">I did the QL</button>
+    `;
+    return;
+  }
+  if(hipsPhase !== 'floor'){
+    c.innerHTML = `
+      ${sessionClockHtml()}
+      <h2>Hips · Daily</h2>
+      ${hipsModeBar()}
+      <div class="card">
+        <b>Setup</b>
+        <div class="how"><b>How to do it</b><br>
+          Supine. Heels on a bench or box. Knees about 90°. Foam roller or folded towel between the knees.
+          Right-handed golfer: lead hip is the LEFT.
+        </div>
+        ${hipsDemoSlot('Heels on the bench. Knees ~90°. Roller between the knees. Left is the lead side.')}
+      </div>
+      <p class="small">4 rounds. 30 seconds each of the three floor steps. Then optional QL.</p>
+      <button type="button" onclick="beginHipsFloor()">Start Daily</button>
+    `;
+    return;
+  }
+  const step = HIPS_DAILY[hipsStep] || HIPS_DAILY[0];
+  c.innerHTML = `
+    ${sessionClockHtml()}
+    <h2>Hips · Daily</h2>
+    ${hipsModeBar()}
+    <p>Round ${hipsRound} of 4 · Step ${hipsStep+1} of 3</p>
+    <div class="card">
+      <p class="small">Setup reminder: supine, heels on a bench, knees ~90°, roller between the knees.</p>
+      <b>${step.name}</b> <span class="small">30 sec</span>
+      <div class="how"><b>How to do it</b><br>${step.how}</div>
+      ${hipsDemoSlot(step.cues)}
+    </div>
+    <div class="timer" id="hiptimer">0:30</div>
+    <button type="button" id="hipStart" onclick="runHipsStep()">Start 30s</button>
+    <button type="button" class="secondary" onclick="nextHipsFloorStep()">Skip / next</button>
+  `;
+}
+
+function beginHipsFloor(){
+  hipsPhase = 'floor';
+  hipsRound = 1;
+  hipsStep = 0;
+  renderHipsDaily();
+}
+
+function runHipsStep(){
+  const b = document.getElementById('hipStart');
+  if(b){ b.disabled = true; b.textContent = 'Going…'; }
+  const step = HIPS_DAILY[hipsStep] || HIPS_DAILY[0];
+  runTimer(step.secs || 30, 'hiptimer', nextHipsFloorStep);
+}
+
+function nextHipsFloorStep(){
+  clearWarmupTimers();
+  const next = PWLogic.hipsFloorAdvance(hipsRound, hipsStep);
+  hipsPhase = next.phase;
+  hipsRound = next.round;
+  hipsStep = next.step;
+  renderHipsDaily();
+}
+
+function renderHipsPattern(){
+  const c = document.getElementById('content');
+  c.innerHTML = `
+    ${sessionClockHtml()}
+    <h2>Hips · Pattern</h2>
+    ${hipsModeBar()}
+    <div class="card">
+      <b>Left hip clears first</b> <span class="small">8–10 slow reps · ~5 min</span>
+      <div class="how"><b>How to do it</b><br>
+        Stand tall. Set arm structure with a club. Hinge.
+        LEFT hip clears FIRST, THEN the torso shifts toward the target.
+        Trail sidebend is the result, not the start.
+        Do not compress the spine from the top down.
+      </div>
+      ${hipsDemoSlot('Left hip first. Then torso toward target. Trail sidebend follows. Spine long.')}
+    </div>
+    <button type="button" onclick="logHipsMode('pattern')">Log Pattern</button>
+  `;
+}
+
+function logHipsMode(mode){
+  if(PWLogic.isHipsMode(mode)) hipsMode = mode;
+  sessionKind = 'hips';
+  const date = new Date().toISOString().slice(0,10);
+  const secs = stopWorkoutClock();
+  const dur = fmtDuration(secs);
+  history.push(PWLogic.hipsSessionRecord({date:date, mode:hipsMode, duration:secs, elapsed:dur}));
+  try { localStorage.setItem('pw_history', JSON.stringify(history)); } catch(e){}
+  showHipsLogged(dur);
+}
+
+function showHipsLogged(dur){
+  stopCam();
+  currentWorkout = [];
+  sessionKind = 'lift';
+  showHome();
+  const label = PWLogic.hipsHistoryLabel(hipsMode);
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>${label}</h2>
+      <p>Logged. Not a lift day.</p>
+      <p class="small">${dur ? ('Time: ' + dur) : ''}</p>
+    </div>`;
+}
+
+function toggleHipsCam(btn){
+  const wrap = btn && btn.parentElement;
+  const vid = wrap ? wrap.querySelector('video') : null;
+  if(!vid) return;
+  if(stream){
+    stopCam();
+    vid.classList.add('hidden');
+    btn.textContent = 'Self-video';
+    return;
+  }
+  vid.classList.remove('hidden');
+  startCamInto(vid);
+  btn.textContent = 'Stop camera';
+}
+
+function renderWorkout(){
+  const c = document.getElementById('content');
+  const hips = sessionKind === 'hips';
+  const total = currentWorkout.length;
+  if(liftIndex < 0) liftIndex = 0;
+  if(liftIndex >= total) liftIndex = Math.max(0, total - 1);
+  let html = `${sessionClockHtml()}
     <h2>${sessionLabel}</h2>
+    ${hips ? hipsModeBar() : ''}
     ${sessionLabel === 'Workout C' ? '<button type="button" class="tiny secondary" onclick="showPavelNote()">What is a Pavel day?</button>' : ''}
-    <p>Lift ${liftIndex+1} of ${total}</p>
-    <p class="small">Clock is running. Log the set in front of you. Tap + Set if you do more. Tap BW if there is no load. Unilateral lifts are logged per side.</p>
+    <p>${hips ? 'Move' : 'Lift'} ${liftIndex+1} of ${total}</p>
+    <p class="small">${hips ? 'Same lift chrome as A/B. Log the set in front of you. RPE 6–7. Stop short of failure.' : 'Clock is running. Log the set in front of you. Tap + Set if you do more. Tap BW if there is no load. Unilateral lifts are logged per side.'}</p>
     <button type="button" class="${trackLog?'selected':'secondary'}" onclick="toggleTrack()">${trackLog?'Tracking on':'Tracking off'}</button>
     <div class="jumplist">`;
   currentWorkout.forEach((ex,i) => {
@@ -1161,18 +1459,21 @@ function renderWorkout(){
     const last = daySets.length ? daySets[daySets.length-1] : null;
     const sl = sideLabel(ex);
     const open = howOpen[i];
+    const demo = hips
+      ? hipsDemoSlot(ex.cues)
+      : `<a class="small" href="${ex.video}" target="_blank" rel="noopener">Watch demo</a>`;
     html += `
       <div class="card excard" id="ex${i}">
         <b>${ex.name}</b> <span class="small">${ex.sets}</span>
         ${lastLine(ex)}
         <p class="small">${sideNote(ex)}</p>
-        <button type="button" class="tiny secondary" onclick="swapLift()">Swap</button>
+        ${hips ? '' : '<button type="button" class="tiny secondary" onclick="swapLift()">Swap</button>'}
         <button type="button" class="tiny secondary" onclick="toggleHow(${i})">How / demo</button>
         <div class="howbox${open?'':' hidden'}" id="howbox${i}">
           <div class="how"><b>How to do it</b><br>${ex.how}</div>
-          <div class="cue"><b>Cues:</b> ${ex.cues}</div>
+          ${hips ? '' : `<div class="cue"><b>Cues:</b> ${ex.cues}</div>`}
           <div class="small">Mods: ${ex.mods}</div>
-          <a class="small" href="${ex.video}" target="_blank" rel="noopener">Watch demo</a>
+          ${demo}
         </div>`;
     if(!trackLog){
       html += `<p class="small">Not tracking numbers this session. Tap Tracking on if you want to log.</p>`;
@@ -1221,14 +1522,14 @@ function renderWorkout(){
   });
   if(total){
     if(liftIndex === total - 1){
-      html += `<p class="small">Last lift. Tap Save Session when you are done.</p>`;
+      html += `<p class="small">${hips ? 'Last move. Tap Log Hips when you are done.' : 'Last lift. Tap Save Session when you are done.'}</p>`;
     }
     if(liftIndex > 0){
       html += `<button class="secondary" onclick="prevLift()">Previous</button>`;
     }
     html += `<button onclick="nextLift()">Next</button>`;
   }
-  html += `<button onclick="saveSession()">Save Session</button>`;
+  html += `<button onclick="saveSession()">${hips ? 'Log Hips' : 'Save Session'}</button>`;
   c.innerHTML = html;
 }
 
@@ -1237,6 +1538,30 @@ function saveSession(){
   const date = new Date().toISOString().slice(0,10);
   const secs = stopWorkoutClock();
   const dur = fmtDuration(secs);
+  if(sessionKind === 'hips'){
+    if(trackLog){
+      currentWorkout.forEach((ex,i) => {
+        const n = setCounts[i] || 3;
+        const sl = sideLabel(ex);
+        for(let s=0;s<n;s++){
+          const wEl = document.getElementById('w'+i+'_'+s);
+          const rEl = document.getElementById('r'+i+'_'+s);
+          const pEl = document.getElementById('p'+i+'_'+s);
+          const d = (draft[i] && draft[i][s]) || {};
+          const w = wEl ? wEl.value : (d.w || '');
+          const r = wEl ? (rEl ? rEl.value : '') : (d.r || '');
+          const pval = wEl ? (pEl ? pEl.value : '') : (d.p || '');
+          if(w||r){
+            history.push({date, id:ex.id, name:ex.name, set:s+1, weight:w, reps:r, rpe:pval, pain:false, perSide:!!sl, sideLabel:sl, duration:secs, type:'hips', mode:hipsMode});
+          }
+        }
+      });
+    }
+    history.push(PWLogic.hipsSessionRecord({date:date, mode:hipsMode, duration:secs, elapsed:dur}));
+    try { localStorage.setItem('pw_history', JSON.stringify(history)); } catch(e){}
+    showHipsLogged(dur);
+    return;
+  }
   if(trackLog){
     currentWorkout.forEach((ex,i) => {
       const n = setCounts[i] || 3;
@@ -1256,7 +1581,7 @@ function saveSession(){
     });
   }
   history.push({date, id:'_session', name:'Full-body session', duration:secs, elapsed:dur});
-  const recent = history.filter(h => h.id !== '_session').slice(-12);
+  const recent = history.filter(h => h.id !== '_session' && h.id !== '_hips' && h.type !== 'hips').slice(-12);
   const high = recent.filter(h => h.rpe>=8 || h.pain).length;
   localStorage.setItem('pw_history', JSON.stringify(history));
   let msg;
@@ -1277,24 +1602,47 @@ function showHistory(){
   const back = '<button class="secondary" onclick="clearContent()">Back</button>';
   if(!history.length){ c.innerHTML='<p>No history yet.</p>'+back; return; }
 
-  const sessions = history.filter(h => h.id === '_session');
+  const sessions = history.filter(h => PWLogic.isLiftSession(h));
   const lastSess = sessions.length ? sessions[sessions.length-1] : null;
   const lastDate = lastSess && lastSess.date ? lastSess.date : 'none';
   const lastDur = lastSess ? (lastSess.elapsed || fmtDuration(lastSess.duration||0)) : 'none';
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 30);
   const cut = cutoff.toISOString().slice(0,10);
-  const painN = history.filter(h => h.id !== '_session' && h.pain && h.date && h.date >= cut).length;
+  const painN = history.filter(h => h.id !== '_session' && h.id !== '_hips' && h.type !== 'hips' && h.pain && h.date && h.date >= cut).length;
 
   const byDate = {};
   history.forEach(h => {
     if(!h.date) return;
-    if(!byDate[h.date]) byDate[h.date] = {session:null, lifts:[]};
-    if(h.id === '_session') byDate[h.date].session = h;
+    if(!byDate[h.date]) byDate[h.date] = {session:null, hips:[], lifts:[], hipsLifts:[]};
+    if(PWLogic.isLiftSession(h)) byDate[h.date].session = h;
+    else if(h.id === '_hips') byDate[h.date].hips.push(h);
+    else if(h.type === 'hips') byDate[h.date].hipsLifts.push(h);
     else byDate[h.date].lifts.push(h);
   });
   const dates = Object.keys(byDate).sort().reverse();
   const expandN = dates.length <= 8 ? dates.length : 8;
+
+  function liftRowsHtml(rows){
+    const byLift = {};
+    rows.forEach(h => {
+      if(!byLift[h.id]) byLift[h.id] = [];
+      byLift[h.id].push(h);
+    });
+    let out = '';
+    Object.keys(byLift).forEach(id => {
+      const sets = byLift[id];
+      let pick = sets[sets.length-1];
+      let maxW = -1;
+      sets.forEach(s => {
+        const n = parseFloat(s.weight);
+        if(s.weight !== 'BW' && !isNaN(n) && n > maxW){ maxW = n; pick = s; }
+      });
+      const side = pick.perSide && pick.sideLabel ? ' '+pick.sideLabel : '';
+      out += `<div class="ex"><span>${pick.name}</span><span>${pick.weight} x ${pick.reps}${side} RPE ${pick.rpe||'?'}${pick.pain?' PAIN':''}</span></div>`;
+    });
+    return out;
+  }
 
   let html = `<h2>History</h2>
     <div class="stats">
@@ -1310,34 +1658,27 @@ function showHistory(){
     const elapsed = g.session ? (g.session.elapsed || fmtDuration(g.session.duration||0)) : '';
     const collapsed = idx >= expandN;
     const sid = 'old'+idx;
-    const byLift = {};
-    g.lifts.forEach(h => {
-      if(!byLift[h.id]) byLift[h.id] = [];
-      byLift[h.id].push(h);
-    });
-    html += `<div class="card"><b>${date}</b> <span class="small">${elapsed}</span>`;
-    if(collapsed){
-      html += `<button type="button" class="tiny secondary" id="${sid}btn" onclick="toggleOld('${sid}')">Show session</button><div id="${sid}" class="hidden">`;
+    if(g.session || g.lifts.length){
+      html += `<div class="card"><b>${date}</b> <span class="small">${elapsed}</span>`;
+      if(collapsed){
+        html += `<button type="button" class="tiny secondary" id="${sid}btn" onclick="toggleOld('${sid}')">Show session</button><div id="${sid}" class="hidden">`;
+      }
+      html += liftRowsHtml(g.lifts);
+      if(collapsed) html += `</div>`;
+      html += `</div>`;
     }
-    Object.keys(byLift).forEach(id => {
-      const sets = byLift[id];
-      let pick = sets[sets.length-1];
-      let maxW = -1;
-      sets.forEach(s => {
-        const n = parseFloat(s.weight);
-        if(s.weight !== 'BW' && !isNaN(n) && n > maxW){ maxW = n; pick = s; }
-      });
-      const side = pick.perSide && pick.sideLabel ? ' '+pick.sideLabel : '';
-      html += `<div class="ex"><span>${pick.name}</span><span>${pick.weight} x ${pick.reps}${side} RPE ${pick.rpe||'?'}${pick.pain?' PAIN':''}</span></div>`;
+    (g.hips || []).forEach(hs => {
+      const hElapsed = hs.elapsed || fmtDuration(hs.duration||0);
+      html += `<div class="card"><b>${hs.name || 'Hips'}</b> <span class="small">${date}${hElapsed ? ' · ' + hElapsed : ''}</span>`;
+      if(hs.mode === 'load') html += liftRowsHtml(g.hipsLifts);
+      html += `</div>`;
     });
-    if(collapsed) html += `</div>`;
-    html += `</div>`;
   });
 
   html += '<h2>Trends</h2>';
   const byLiftAll = {};
   history.forEach(h => {
-    if(!h.id || h.id === '_session') return;
+    if(!h.id || h.id === '_session' || h.id === '_hips' || h.type === 'hips') return;
     if(!byLiftAll[h.id]) byLiftAll[h.id] = {name:h.name, sets:[]};
     byLiftAll[h.id].sets.push(h);
   });
@@ -1395,11 +1736,15 @@ function showSelfVideo(){
 }
 
 let stream = null;
-async function startCam(){
+async function startCamInto(el){
+  if(!el) return;
   try{
     stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
-    document.getElementById('preview').srcObject = stream;
+    el.srcObject = stream;
   }catch(e){ alert('Camera denied or unavailable'); }
+}
+async function startCam(){
+  await startCamInto(document.getElementById('preview'));
 }
 function stopCam(){
   if(stream){ stream.getTracks().forEach(t => t.stop()); stream=null; }

@@ -131,4 +131,96 @@ assert.strictEqual(TEMPLATE_A.length, 7);
 assert.strictEqual(TEMPLATE_B.length, 7);
 assert.strictEqual(TEMPLATE_C.length, 5);
 
+assert.strictEqual(L.suggestedWhich('', false), 'C', 'Empty history suggests Charlie');
+assert.strictEqual(L.suggestedWhich('Workout A', true), 'A');
+assert.strictEqual(L.suggestedWhich('Workout B', true), 'B');
+assert.strictEqual(L.suggestedWhich('Workout C', true), 'C');
+assert.strictEqual(L.suggestedWhich('Hips · Daily', true), 'C', 'Hips must not steal Suggested');
+assert.strictEqual(L.suggestedWhich('Hips · Load', true), 'C');
+assert.strictEqual(L.suggestedWhich('Hips · Pattern', true), 'C');
+assert.strictEqual(L.suggestedWhich('Workout Hips', true), 'C');
+
+assert.deepStrictEqual(L.HIPS_MODES, ['daily', 'load', 'pattern']);
+assert.strictEqual(L.HIPS_STEP_SECS, 30);
+assert.strictEqual(L.HIPS_DAILY_ROUNDS, 4);
+assert.strictEqual(L.HIPS_DAILY_STEPS.length, 3);
+assert.deepStrictEqual(L.HIPS_DAILY_STEPS.map(function (s) { return s.secs; }), [30, 30, 30]);
+assert.strictEqual(L.HIPS_DAILY_STEPS[0].name, 'Activate hamstrings');
+assert.strictEqual(L.HIPS_DAILY_STEPS[1].name, 'Activate left groin / IR');
+assert.strictEqual(L.HIPS_DAILY_STEPS[2].name, 'Remove the right side');
+assert.deepStrictEqual(L.HIPS_LOAD_IDS, ['hips_iso_hinge', 'hips_kickstand_rdl', 'hips_ir_hinge']);
+L.HIPS_LOAD_IDS.forEach(function (id) {
+  assert.ok(TEMPLATE_A.indexOf(id) === -1);
+  assert.ok(TEMPLATE_B.indexOf(id) === -1);
+  assert.ok(TEMPLATE_C.indexOf(id) === -1);
+  assert.ok(ALL.indexOf(id) === -1, 'Hips load lifts stay out of the A/B/C pool');
+});
+
+assert.ok(L.isHipsMode('daily'));
+assert.ok(L.isHipsMode('load'));
+assert.ok(L.isHipsMode('pattern'));
+assert.ok(!L.isHipsMode('D'));
+assert.ok(!L.isHipsMode('A'));
+
+assert.strictEqual(L.hipsHistoryLabel('daily'), 'Hips · Daily');
+assert.strictEqual(L.hipsHistoryLabel('load'), 'Hips · Load');
+assert.strictEqual(L.hipsHistoryLabel('pattern'), 'Hips · Pattern');
+
+var hipsRec = L.hipsSessionRecord({date: '2026-09-02', mode: 'daily', duration: 480, elapsed: '8 min'});
+assert.strictEqual(hipsRec.id, '_hips');
+assert.strictEqual(hipsRec.type, 'hips');
+assert.strictEqual(hipsRec.mode, 'daily');
+assert.strictEqual(hipsRec.name, 'Hips · Daily');
+assert.ok(!L.isLiftSession(hipsRec), 'Hips must not count as a finished A/B/C session');
+assert.ok(L.isHipsRecord(hipsRec));
+assert.ok(L.isLiftSession({id: '_session', name: 'Full-body session'}));
+assert.ok(!L.isLiftSession({id: '_session', type: 'hips'}));
+
+var badMode = L.hipsSessionRecord({mode: 'workout-d'});
+assert.strictEqual(badMode.mode, 'daily');
+assert.strictEqual(badMode.id, '_hips');
+
+var adv = L.hipsFloorAdvance(1, 0);
+assert.deepStrictEqual(adv, {phase: 'floor', round: 1, step: 1});
+assert.deepStrictEqual(L.hipsFloorAdvance(1, 2), {phase: 'floor', round: 2, step: 0});
+assert.deepStrictEqual(L.hipsFloorAdvance(4, 2), {phase: 'ql', round: 4, step: 2});
+
+var fs = require('fs');
+var html = fs.readFileSync(__dirname + '/../index.html', 'utf8');
+assert.ok(html.indexOf('id="cardA"') !== -1);
+assert.ok(html.indexOf('id="cardB"') !== -1);
+assert.ok(html.indexOf('id="cardC"') !== -1);
+assert.ok(html.indexOf('id="cardHips"') !== -1);
+assert.ok(html.indexOf('class="card suggested" id="cardC"') !== -1, 'Charlie stays the gold Suggested default');
+assert.ok(html.indexOf('id="cardHips"') !== -1 && !/id="cardHips"[^>]*suggested/.test(html));
+assert.ok(html.indexOf('Start Hips') !== -1);
+assert.ok(html.indexOf('Start Workout Hips') === -1);
+assert.ok(html.indexOf('Workout D') === -1);
+assert.ok(html.indexOf('Start Workout A') !== -1);
+assert.ok(html.indexOf('Start Workout B') !== -1);
+assert.ok(html.indexOf('Start Workout C') !== -1);
+assert.ok(html.indexOf("onclick=\"startWarmup('short')\"") !== -1);
+assert.ok(html.indexOf("onclick=\"startWarmup('full')\"") !== -1);
+assert.ok(html.indexOf("onclick=\"startWarmup('long')\"") !== -1);
+assert.ok(html.indexOf('>5 min<') !== -1);
+assert.ok(html.indexOf('>12 min<') !== -1);
+assert.ok(html.indexOf('>18 min<') !== -1);
+assert.ok(html.indexOf('Stretch only. None of these start lifts.') !== -1);
+assert.ok(html.indexOf("if(which === 'A' || which === 'B')") !== -1, '5-min pulse stays glued to A/B');
+assert.ok(html.indexOf('pendingAfterWarmup') !== -1);
+assert.ok(html.indexOf('wok-home') !== -1);
+assert.ok(html.indexOf('abandonSession()') !== -1);
+assert.ok(html.indexOf('What is a Pavel day?') !== -1);
+assert.ok(html.indexOf('tag-pavel') !== -1);
+assert.ok(html.indexOf('#0d1c38') !== -1);
+assert.ok(html.indexOf('#dcc684') !== -1);
+assert.ok(!/Function Health/i.test(html));
+assert.ok(!/frailty/i.test(html));
+assert.ok(!/wildman/i.test(html));
+assert.ok(!/\bvoice\b/i.test(html));
+assert.ok(html.indexOf('instagram.com') === -1);
+assert.ok(!/cdninstagram|scontent\.cdninstagram|youtube\.com\/embed/i.test(html));
+assert.ok(html.indexOf("startHips()") !== -1);
+assert.ok(html.indexOf('setHipsMode') !== -1);
+
 console.log('workout-logic tests passed');
