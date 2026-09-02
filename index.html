@@ -92,9 +92,10 @@ button.pill{flex:1;width:auto;margin:0;background:#152a4e;color:#eef2f9;border:1
 .card.suggested{border-color:#dcc684}
 .card.suggested .card-start{background:#dcc684;color:#1c1a0e;border:none}
 .tag-mins{display:inline-block;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;background:#0d1c38;color:#dcc684;border:1px solid #233a63;border-radius:99px;padding:4px 8px;font-weight:700}
-.hips-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}
-.hips-toolbar .pills{flex:1;margin:0}
-.hips-toolbar .link{margin:0;padding:8px 4px;flex:0 0 auto}
+.hips-toolbar{margin:8px 0 4px}
+.hips-toolbar .pills{margin:0}
+button.link.hips-pattern{display:inline-block;margin:4px 0 0;padding:6px 0;font-size:0.85rem}
+button.link.hips-pattern.on{text-decoration:underline}
 .demo-frame{min-height:120px;border:1px dashed #233a63;border-radius:10px;background:#0d1c38;display:flex;align-items:center;justify-content:center;color:#93a4c2;font-size:0.85rem;margin:8px 0;padding:12px;text-align:center}
 .demo-slot video{border-radius:8px;background:#000;margin-top:8px;width:100%}
 </style>
@@ -1223,7 +1224,7 @@ function hipsModeBar(){
       <button type="button" class="pill${hipsMode==='daily'?' selected':''}" onclick="setHipsMode('daily')">Daily</button>
       <button type="button" class="pill${hipsMode==='load'?' selected':''}" onclick="setHipsMode('load')">Load</button>
     </div>
-    <button type="button" class="link hips-pattern${hipsMode==='pattern'?' selected':''}" onclick="setHipsMode('pattern')">Pattern</button>
+    <button type="button" class="link hips-pattern${hipsMode==='pattern'?' on':''}" onclick="setHipsMode('pattern')">Pattern · ~5 min</button>
   </div>
   <p class="small">${hipsModeLead()}</p>`;
 }
