@@ -68,6 +68,68 @@
     return out;
   }
 
+  var HIPS_MODES = ['daily', 'load', 'pattern'];
+  var HIPS_STEP_SECS = 30;
+  var HIPS_DAILY_ROUNDS = 4;
+  var HIPS_DAILY_STEPS = [
+    {id: 'hamstrings', name: 'Activate hamstrings', secs: HIPS_STEP_SECS},
+    {id: 'left_groin', name: 'Activate left groin / IR', secs: HIPS_STEP_SECS},
+    {id: 'left_owns', name: 'Remove the right side', secs: HIPS_STEP_SECS}
+  ];
+  var HIPS_LOAD_IDS = ['hips_iso_hinge', 'hips_kickstand_rdl', 'hips_ir_hinge'];
+  var HIPS_LABELS = {daily: 'Daily', load: 'Load', pattern: 'Pattern'};
+
+  function isHipsMode(mode) {
+    return HIPS_MODES.indexOf(mode) !== -1;
+  }
+
+  function hipsHistoryLabel(mode) {
+    return 'Hips · ' + (HIPS_LABELS[mode] || 'Daily');
+  }
+
+  function isHipsRecord(h) {
+    return !!(h && (h.type === 'hips' || h.id === '_hips'));
+  }
+
+  function isLiftSession(h) {
+    return !!(h && h.id === '_session' && !isHipsRecord(h));
+  }
+
+  function suggestedWhich(lastLabel, hasLast) {
+    if (hasLast && lastLabel === 'Workout A') return 'A';
+    if (hasLast && lastLabel === 'Workout B') return 'B';
+    return 'C';
+  }
+
+  function hipsSessionRecord(opts) {
+    opts = opts || {};
+    var mode = isHipsMode(opts.mode) ? opts.mode : 'daily';
+    return {
+      date: opts.date || '',
+      id: '_hips',
+      type: 'hips',
+      mode: mode,
+      name: hipsHistoryLabel(mode),
+      duration: opts.duration || 0,
+      elapsed: opts.elapsed || ''
+    };
+  }
+
+  function hipsFloorAdvance(round, step, rounds, nSteps) {
+    rounds = rounds || HIPS_DAILY_ROUNDS;
+    nSteps = nSteps || HIPS_DAILY_STEPS.length;
+    var nextStep = step + 1;
+    var nextRound = round;
+    if (nextStep >= nSteps) {
+      nextStep = 0;
+      nextRound = round + 1;
+    }
+    if (nextRound > rounds) {
+      return {phase: 'ql', round: rounds, step: nSteps - 1};
+    }
+    return {phase: 'floor', round: nextRound, step: nextStep};
+  }
+
   function swapPoolIds(originId, currentId, locked, taken, alts, exercises) {
     locked = locked || [];
     taken = taken || [];
@@ -109,6 +171,18 @@
     SCREEN_KEYS: SCREEN_KEYS,
     SWING_SWAP: SWING_SWAP,
     CLEAN_SWAP: CLEAN_SWAP,
+    HIPS_MODES: HIPS_MODES,
+    HIPS_STEP_SECS: HIPS_STEP_SECS,
+    HIPS_DAILY_ROUNDS: HIPS_DAILY_ROUNDS,
+    HIPS_DAILY_STEPS: HIPS_DAILY_STEPS,
+    HIPS_LOAD_IDS: HIPS_LOAD_IDS,
+    isHipsMode: isHipsMode,
+    hipsHistoryLabel: hipsHistoryLabel,
+    isHipsRecord: isHipsRecord,
+    isLiftSession: isLiftSession,
+    suggestedWhich: suggestedWhich,
+    hipsSessionRecord: hipsSessionRecord,
+    hipsFloorAdvance: hipsFloorAdvance,
     isFailedScreen: isFailedScreen,
     isAnsweredScreen: isAnsweredScreen,
     screenComplete: screenComplete,
