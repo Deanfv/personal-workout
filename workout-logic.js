@@ -91,14 +91,66 @@
     return !!(h && (h.type === 'hips' || h.id === '_hips'));
   }
 
+  var GUTCHECK_IDS = ['swing', 'goblet', 'row'];
+  var GUTCHECK_TARGET = 100;
+  var GUTCHECK_SETS = 10;
+  var GUTCHECK_SET_REPS = 10;
+
+  function isGutcheckKind(kind) {
+    return kind === '300' || kind === 'gutcheck';
+  }
+
+  function isGutcheckRecord(h) {
+    return !!(h && (isGutcheckKind(h.type) || h.id === '_300'));
+  }
+
   function isLiftSession(h) {
-    return !!(h && h.id === '_session' && !isHipsRecord(h));
+    return !!(h && h.id === '_session' && !isHipsRecord(h) && !isGutcheckRecord(h));
   }
 
   function suggestedWhich(lastLabel, hasLast) {
     if (hasLast && lastLabel === 'Workout A') return 'A';
     if (hasLast && lastLabel === 'Workout B') return 'B';
     return 'C';
+  }
+
+  function gutcheckHistoryLabel() {
+    return '300';
+  }
+
+  function gutcheckSessionRecord(opts) {
+    opts = opts || {};
+    return {
+      date: opts.date || '',
+      id: '_300',
+      type: '300',
+      name: gutcheckHistoryLabel(),
+      duration: opts.duration || 0,
+      elapsed: opts.elapsed || ''
+    };
+  }
+
+  function gutcheckRepsFromSets(sets, defaultReps) {
+    defaultReps = defaultReps == null ? GUTCHECK_SET_REPS : defaultReps;
+    var sum = 0;
+    (sets || []).forEach(function (s) {
+      if (!s || !s.done) return;
+      var n = parseInt(s.reps, 10);
+      sum += isNaN(n) ? defaultReps : n;
+    });
+    return sum;
+  }
+
+  function gutcheckProgress(logged, target) {
+    logged = parseInt(logged, 10);
+    if (isNaN(logged) || logged < 0) logged = 0;
+    target = target == null ? GUTCHECK_TARGET : target;
+    return {
+      logged: logged,
+      target: target,
+      remain: Math.max(0, target - logged),
+      label: logged + '/' + target
+    };
   }
 
   function hipsSessionRecord(opts) {
@@ -179,8 +231,18 @@
     isHipsMode: isHipsMode,
     hipsHistoryLabel: hipsHistoryLabel,
     isHipsRecord: isHipsRecord,
+    GUTCHECK_IDS: GUTCHECK_IDS,
+    GUTCHECK_TARGET: GUTCHECK_TARGET,
+    GUTCHECK_SETS: GUTCHECK_SETS,
+    GUTCHECK_SET_REPS: GUTCHECK_SET_REPS,
+    isGutcheckKind: isGutcheckKind,
+    isGutcheckRecord: isGutcheckRecord,
     isLiftSession: isLiftSession,
     suggestedWhich: suggestedWhich,
+    gutcheckHistoryLabel: gutcheckHistoryLabel,
+    gutcheckSessionRecord: gutcheckSessionRecord,
+    gutcheckRepsFromSets: gutcheckRepsFromSets,
+    gutcheckProgress: gutcheckProgress,
     hipsSessionRecord: hipsSessionRecord,
     hipsFloorAdvance: hipsFloorAdvance,
     isFailedScreen: isFailedScreen,
