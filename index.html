@@ -1672,10 +1672,13 @@ function saveSession(){
           const wEl = document.getElementById('w'+i+'_'+s);
           const rEl = document.getElementById('r'+i+'_'+s);
           const pEl = document.getElementById('p'+i+'_'+s);
+          const doneBtn = document.getElementById('done'+i+'_'+s);
           const d = (draft[i] && draft[i][s]) || {};
           const w = wEl ? wEl.value : (d.w || '');
           const r = wEl ? (rEl ? rEl.value : '') : (d.r || '');
           const pval = wEl ? (pEl ? pEl.value : '') : (d.p || '');
+          const done = doneBtn ? doneBtn.classList.contains('selected') : !!d.done;
+          if(!done && !String(w || '').trim()) continue;
           if(w||r){
             history.push({date, id:ex.id, name:ex.name, set:s+1, weight:w, reps:r, rpe:pval, pain:false, perSide:false, sideLabel:'', duration:secs, type:'300'});
           }
