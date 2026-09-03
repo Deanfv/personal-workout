@@ -1239,12 +1239,9 @@ function swapLift(){
 }
 
 function scrollSessionHead(){
-  const el = document.querySelector('.wok-clock') || document.getElementById('content');
-  if(el && el.scrollIntoView){
-    try { el.scrollIntoView({block:'start'}); } catch(e){ window.scrollTo(0,0); }
-  } else {
-    window.scrollTo(0,0);
-  }
+  window.scrollTo(0, 0);
+  if(document.documentElement) document.documentElement.scrollTop = 0;
+  if(document.body) document.body.scrollTop = 0;
 }
 
 function goToLift(i){
