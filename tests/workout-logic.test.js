@@ -245,6 +245,8 @@ assert.ok(html.indexOf('id="cardHips"') < html.indexOf('id="card300"'));
 assert.ok(html.indexOf('id="card300"') < html.indexOf('>Stretch<'));
 assert.ok(html.indexOf("onclick=\"start300()\"") !== -1);
 assert.ok(html.indexOf('function start300(') !== -1);
+assert.ok(html.indexOf('function scrollSessionHead(') !== -1);
+assert.ok(html.indexOf('scrollSessionHead()') !== -1);
 var start300Fn = html.slice(html.indexOf('function start300('), html.indexOf('function start300(') + 900);
 assert.ok(start300Fn.indexOf('startWarmup') === -1, 'Do not glue a 5-min pulse onto 300');
 assert.ok(start300Fn.indexOf('pw_last_label') === -1, '300 must not become last Suggested workout');

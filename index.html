@@ -1238,6 +1238,15 @@ function swapLift(){
   renderWorkout();
 }
 
+function scrollSessionHead(){
+  const el = document.querySelector('.wok-clock') || document.getElementById('content');
+  if(el && el.scrollIntoView){
+    try { el.scrollIntoView({block:'start'}); } catch(e){ window.scrollTo(0,0); }
+  } else {
+    window.scrollTo(0,0);
+  }
+}
+
 function goToLift(i){
   readDraft();
   markLiftLeft(liftIndex);
@@ -1246,6 +1255,7 @@ function goToLift(i){
   if(i >= currentWorkout.length) i = currentWorkout.length - 1;
   liftIndex = i;
   renderWorkout();
+  scrollSessionHead();
 }
 
 function nextLift(){
@@ -1253,6 +1263,7 @@ function nextLift(){
   markLiftLeft(liftIndex);
   if(liftIndex < currentWorkout.length - 1) liftIndex++;
   renderWorkout();
+  scrollSessionHead();
 }
 
 function prevLift(){
@@ -1260,6 +1271,7 @@ function prevLift(){
   markLiftLeft(liftIndex);
   if(liftIndex > 0) liftIndex--;
   renderWorkout();
+  scrollSessionHead();
 }
 
 function showPavelNote(){
