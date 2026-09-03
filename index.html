@@ -92,6 +92,8 @@ button.pill{flex:1;width:auto;margin:0;background:#152a4e;color:#eef2f9;border:1
 .card.suggested{border-color:#dcc684}
 .card.suggested .card-start{background:#dcc684;color:#1c1a0e;border:none}
 .tag-mins{display:inline-block;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;background:#0d1c38;color:#dcc684;border:1px solid #233a63;border-radius:99px;padding:4px 8px;font-weight:700}
+.tag-gut{display:inline-block;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;background:#233a63;color:#eef2f9;border:1px solid #5b7399;border-radius:99px;padding:4px 8px;font-weight:700}
+.gc-count{font-size:1.6rem;font-weight:700;color:#dcc684;margin:6px 0 2px;font-variant-numeric:tabular-nums}
 .hips-toolbar{margin:8px 0 4px}
 .hips-toolbar .pills{margin:0}
 button.link.hips-pattern{display:inline-block;margin:4px 0 0;padding:6px 0;font-size:0.85rem}
@@ -178,6 +180,15 @@ button.link.hips-pattern.on{text-decoration:underline}
         <p class="small">Daily left-hip work. About 8 minutes. Not a lift day.</p>
         <button type="button" class="secondary card-start" onclick="startHips()">Start Hips</button>
       </div>
+      <div class="card" id="card300" data-session="300">
+        <div class="row-between">
+          <h2>300</h2>
+          <span class="tag-gut">Gut check</span>
+        </div>
+        <p class="small">Golf gut check. 100 swings, 100 goblets, 100 rows.</p>
+        <p class="small">Not the day before you play. RPE 6–7. Sets of 10.</p>
+        <button type="button" class="secondary card-start" onclick="start300()">Start 300</button>
+      </div>
       <p class="eyebrow">Stretch</p>
       <div class="pills">
         <button type="button" class="pill" onclick="startWarmup('short')">5 min</button>
@@ -203,7 +214,7 @@ button.link.hips-pattern.on{text-decoration:underline}
   <button type="button" onclick="hidePavelNote()">Got it</button>
 </div>
 
-<script src="workout-logic.js?v=20260902a"></script>
+<script src="workout-logic.js?v=20260903a"></script>
 <script>
 const EXERCISES = [
   {id:'goblet', name:'Goblet Squat', cat:'squat',
@@ -480,6 +491,14 @@ function paintHome(){
     const btn = hips.querySelector('.card-start');
     if(btn) btn.classList.add('secondary');
   }
+  const card300 = document.getElementById('card300');
+  if(card300){
+    card300.classList.remove('suggested');
+    const mark = card300.querySelector('.suggest-mark');
+    if(mark) mark.classList.add('hidden');
+    const btn = card300.querySelector('.card-start');
+    if(btn) btn.classList.add('secondary');
+  }
 }
 
 function skipSelfScreen(){
@@ -736,6 +755,7 @@ function runTimer(secs, id, onDone){
 const TEMPLATE_A = ['hang','goblet','hkpress','rdl','row','reverse_lunge','pallof'];
 const TEMPLATE_B = ['hang','swing','floorpress','offset_squat','row','farmer','lift'];
 const TEMPLATE_C = ['swing_1a','kb_clean','tgu_half','windmill','suitcase'];
+const TEMPLATE_300 = ['swing','goblet','row'];
 const TEMPLATE_ALTS = {
   rdl: ['hipthrust','goblet'],
   slrdl: ['rdl','reverse_lunge','hipthrust'],
@@ -840,14 +860,41 @@ function startTemplate(which){
   beginWorkout(lifts, label);
 }
 
+function isGutcheckSession(){
+  return PWLogic.isGutcheckKind(sessionKind);
+}
+
+function start300(){
+  pendingAfterWarmup = null;
+  sessionKind = '300';
+  sessionLabel = '300';
+  currentWorkout = TEMPLATE_300.map(id => EXERCISES.find(e => e.id === id)).filter(Boolean);
+  liftIndex = 0;
+  swapCursor = {};
+  const nSets = PWLogic.GUTCHECK_SETS;
+  setCounts = currentWorkout.map(() => nSets);
+  howOpen = currentWorkout.map(() => false);
+  liftDone = currentWorkout.map(() => false);
+  draft = currentWorkout.map(() => {
+    const rows = [];
+    for(let s=0;s<nSets;s++) rows.push({w:'',r:String(PWLogic.GUTCHECK_SET_REPS),p:'',done:false});
+    return rows;
+  });
+  hideHome();
+  startWorkoutClock();
+  renderWorkout();
+}
+
 function startLast(){
   let ids = [];
   try { ids = JSON.parse(localStorage.getItem('pw_last_ids') || '[]'); } catch(e){ ids = []; }
-  if(!ids.length && currentWorkout.length) ids = currentWorkout.map(e => e.id);
+  if(!ids.length && currentWorkout.length && !isGutcheckSession() && sessionKind !== 'hips') ids = currentWorkout.map(e => e.id);
   if(!ids.length){
     const prev = [];
     history.forEach(h => {
-      if(h.id && h.id !== '_session' && h.id !== '_hips' && h.type !== 'hips' && !prev.includes(h.id)) prev.push(h.id);
+      if(!h.id || h.id === '_session' || h.id === '_hips' || h.id === '_300') return;
+      if(h.type === 'hips' || PWLogic.isGutcheckRecord(h)) return;
+      if(!prev.includes(h.id)) prev.push(h.id);
     });
     ids = prev.slice(0,8);
   }
@@ -856,7 +903,7 @@ function startLast(){
     return;
   }
   const label = localStorage.getItem('pw_last_label') || 'Same as last';
-  if(/^Hips/.test(label)){
+  if(/^Hips/.test(label) || label === '300' || /^300/.test(label) || /gutcheck/i.test(label)){
     alert('No last workout yet. Start A, B, or C first.');
     return;
   }
@@ -953,7 +1000,7 @@ function addSet(i){
   readDraft();
   setCounts[i] = (setCounts[i] || 3) + 1;
   if(!draft[i]) draft[i] = [];
-  draft[i].push({w:'',r:'',p:'',done:false});
+  draft[i].push({w:'',r: isGutcheckSession() ? String(PWLogic.GUTCHECK_SET_REPS) : '',p:'',done:false});
   renderWorkout();
 }
 
@@ -1020,6 +1067,7 @@ function completeSet(i,s){
     const a = document.querySelector('.jumplist a[href="#ex'+i+'"]');
     if(a) a.classList.add('did');
   }
+  if(isGutcheckSession()) paintGutcheckCount(i);
 }
 
 function setBW(i,s){
@@ -1052,6 +1100,30 @@ function stepReps(i,s,dir){
   const n = parseInt(el.value, 10);
   const base = isNaN(n) ? 0 : n;
   el.value = String(Math.max(0, base + dir));
+  if(isGutcheckSession()) paintGutcheckCount(i);
+}
+
+function gutcheckDraftSets(i){
+  const rows = draft[i] || [];
+  const n = setCounts[i] || rows.length;
+  const out = [];
+  for(let s=0;s<n;s++){
+    const d = rows[s] || {};
+    const rEl = document.getElementById('r'+i+'_'+s);
+    const doneBtn = document.getElementById('done'+i+'_'+s);
+    out.push({
+      done: doneBtn ? doneBtn.classList.contains('selected') : !!d.done,
+      reps: rEl ? rEl.value : d.r
+    });
+  }
+  return out;
+}
+
+function paintGutcheckCount(i){
+  const el = document.getElementById('gcCount'+i);
+  if(!el) return;
+  const prog = PWLogic.gutcheckProgress(PWLogic.gutcheckRepsFromSets(gutcheckDraftSets(i)));
+  el.textContent = prog.label;
 }
 
 function toggleHow(i){
@@ -1090,9 +1162,10 @@ function abandonSession(){
 
 function lastDaySets(ex){
   const rows = history.filter(h => {
-    if(!h || h.id !== ex.id || h.id === '_session' || h.id === '_hips' || !h.date) return false;
+    if(!h || h.id !== ex.id || h.id === '_session' || h.id === '_hips' || h.id === '_300' || !h.date) return false;
     if(sessionKind === 'hips') return h.type === 'hips';
-    return h.type !== 'hips';
+    if(isGutcheckSession()) return PWLogic.isGutcheckRecord(h);
+    return h.type !== 'hips' && !PWLogic.isGutcheckRecord(h);
   });
   if(!rows.length) return [];
   let newest = rows[0].date;
@@ -1419,6 +1492,19 @@ function showHipsLogged(dur){
     </div>`;
 }
 
+function showGutcheckLogged(dur){
+  stopCam();
+  currentWorkout = [];
+  sessionKind = 'lift';
+  showHome();
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>300</h2>
+      <p>Logged. Gut check — not the next Suggested session.</p>
+      <p class="small">${dur ? ('Time: ' + dur) : ''}</p>
+    </div>`;
+}
+
 function toggleHipsCam(btn){
   const wrap = btn && btn.parentElement;
   const vid = wrap ? wrap.querySelector('video') : null;
@@ -1434,18 +1520,29 @@ function toggleHipsCam(btn){
   btn.textContent = 'Stop camera';
 }
 
+function gutcheckLiftNote(ex){
+  if(!ex) return 'Sets of 10. RPE 6–7. Stop short of failure.';
+  if(ex.id === 'swing') return 'Two-hand Russian. Shoulder height, not American overhead. Sets of 10. RPE 6–7.';
+  if(ex.id === 'row') return '100 total, 50 each arm. Alternate sides or 10 left / 10 right. Sets of 10. RPE 6–7.';
+  return 'Sets of 10. RPE 6–7. Stop short of failure. This is a gut check, not a death march.';
+}
+
 function renderWorkout(){
   const c = document.getElementById('content');
   const hips = sessionKind === 'hips';
+  const gut = isGutcheckSession();
   const total = currentWorkout.length;
   if(liftIndex < 0) liftIndex = 0;
   if(liftIndex >= total) liftIndex = Math.max(0, total - 1);
+  const lead = gut
+    ? 'Not the day before you play. RPE 6–7. Sets of 10. Gut check, not a death march.'
+    : (hips ? 'Same lift chrome as A/B. Log the set in front of you. RPE 6–7. Stop short of failure.' : 'Clock is running. Log the set in front of you. Tap + Set if you do more. Tap BW if there is no load. Unilateral lifts are logged per side.');
   let html = `${sessionClockHtml()}
     <h2>${sessionLabel}</h2>
     ${hips ? hipsModeBar() : ''}
     ${sessionLabel === 'Workout C' ? '<button type="button" class="tiny secondary" onclick="showPavelNote()">What is a Pavel day?</button>' : ''}
     <p>${hips ? 'Move' : 'Lift'} ${liftIndex+1} of ${total}</p>
-    <p class="small">${hips ? 'Same lift chrome as A/B. Log the set in front of you. RPE 6–7. Stop short of failure.' : 'Clock is running. Log the set in front of you. Tap + Set if you do more. Tap BW if there is no load. Unilateral lifts are logged per side.'}</p>
+    <p class="small">${lead}</p>
     <button type="button" class="${trackLog?'selected':'secondary'}" onclick="toggleTrack()">${trackLog?'Tracking on':'Tracking off'}</button>
     <div class="jumplist">`;
   currentWorkout.forEach((ex,i) => {
@@ -1458,17 +1555,21 @@ function renderWorkout(){
     if(!draft[i]) draft[i] = [];
     const daySets = lastDaySets(ex);
     const last = daySets.length ? daySets[daySets.length-1] : null;
-    const sl = sideLabel(ex);
+    const sl = gut ? '' : sideLabel(ex);
     const open = howOpen[i];
     const demo = hips
       ? hipsDemoSlot(ex.cues)
       : `<a class="small" href="${ex.video}" target="_blank" rel="noopener">Watch demo</a>`;
+    const setsLabel = gut ? (PWLogic.GUTCHECK_SETS + '×' + PWLogic.GUTCHECK_SET_REPS + ' · 100') : ex.sets;
+    const note = gut ? gutcheckLiftNote(ex) : sideNote(ex);
+    const countHtml = gut ? `<p class="gc-count" id="gcCount${i}">${PWLogic.gutcheckProgress(PWLogic.gutcheckRepsFromSets(gutcheckDraftSets(i))).label}</p>` : '';
     html += `
       <div class="card excard" id="ex${i}">
-        <b>${ex.name}</b> <span class="small">${ex.sets}</span>
+        <b>${ex.name}</b> <span class="small">${setsLabel}</span>
+        ${countHtml}
         ${lastLine(ex)}
-        <p class="small">${sideNote(ex)}</p>
-        ${hips ? '' : '<button type="button" class="tiny secondary" onclick="swapLift()">Swap</button>'}
+        <p class="small">${note}</p>
+        ${hips || gut ? '' : '<button type="button" class="tiny secondary" onclick="swapLift()">Swap</button>'}
         <button type="button" class="tiny secondary" onclick="toggleHow(${i})">How / demo</button>
         <div class="howbox${open?'':' hidden'}" id="howbox${i}">
           <div class="how"><b>How to do it</b><br>${ex.how}</div>
@@ -1505,7 +1606,7 @@ function renderWorkout(){
           <div class="stepper">
             <span class="slbl">${countWord(ex)}${sl?' '+sl:''}</span>
             <button type="button" class="step" onclick="stepReps(${i},${s},-1)">-</button>
-            <input type="number" id="r${i}_${s}" value="${r||''}">
+            <input type="number" id="r${i}_${s}" value="${r||''}"${gut ? ` oninput="paintGutcheckCount(${i})"` : ''}>
             <button type="button" class="step" onclick="stepReps(${i},${s},1)">+</button>
           </div>
           <div class="stepper">
@@ -1523,14 +1624,14 @@ function renderWorkout(){
   });
   if(total){
     if(liftIndex === total - 1){
-      html += `<p class="small">${hips ? 'Last move. Tap Log Hips when you are done.' : 'Last lift. Tap Save Session when you are done.'}</p>`;
+      html += `<p class="small">${hips ? 'Last move. Tap Log Hips when you are done.' : (gut ? 'Last lift. Tap Log 300 when you are done.' : 'Last lift. Tap Save Session when you are done.')}</p>`;
     }
     if(liftIndex > 0){
       html += `<button class="secondary" onclick="prevLift()">Previous</button>`;
     }
     html += `<button onclick="nextLift()">Next</button>`;
   }
-  html += `<button onclick="saveSession()">${hips ? 'Log Hips' : 'Save Session'}</button>`;
+  html += `<button onclick="saveSession()">${hips ? 'Log Hips' : (gut ? 'Log 300' : 'Save Session')}</button>`;
   c.innerHTML = html;
 }
 
@@ -1563,6 +1664,29 @@ function saveSession(){
     showHipsLogged(dur);
     return;
   }
+  if(isGutcheckSession()){
+    if(trackLog){
+      currentWorkout.forEach((ex,i) => {
+        const n = setCounts[i] || 3;
+        for(let s=0;s<n;s++){
+          const wEl = document.getElementById('w'+i+'_'+s);
+          const rEl = document.getElementById('r'+i+'_'+s);
+          const pEl = document.getElementById('p'+i+'_'+s);
+          const d = (draft[i] && draft[i][s]) || {};
+          const w = wEl ? wEl.value : (d.w || '');
+          const r = wEl ? (rEl ? rEl.value : '') : (d.r || '');
+          const pval = wEl ? (pEl ? pEl.value : '') : (d.p || '');
+          if(w||r){
+            history.push({date, id:ex.id, name:ex.name, set:s+1, weight:w, reps:r, rpe:pval, pain:false, perSide:false, sideLabel:'', duration:secs, type:'300'});
+          }
+        }
+      });
+    }
+    history.push(PWLogic.gutcheckSessionRecord({date:date, duration:secs, elapsed:dur}));
+    try { localStorage.setItem('pw_history', JSON.stringify(history)); } catch(e){}
+    showGutcheckLogged(dur);
+    return;
+  }
   if(trackLog){
     currentWorkout.forEach((ex,i) => {
       const n = setCounts[i] || 3;
@@ -1582,7 +1706,7 @@ function saveSession(){
     });
   }
   history.push({date, id:'_session', name:'Full-body session', duration:secs, elapsed:dur});
-  const recent = history.filter(h => h.id !== '_session' && h.id !== '_hips' && h.type !== 'hips').slice(-12);
+  const recent = history.filter(h => h.id !== '_session' && h.id !== '_hips' && h.id !== '_300' && h.type !== 'hips' && !PWLogic.isGutcheckRecord(h)).slice(-12);
   const high = recent.filter(h => h.rpe>=8 || h.pain).length;
   localStorage.setItem('pw_history', JSON.stringify(history));
   let msg;
@@ -1610,15 +1734,17 @@ function showHistory(){
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 30);
   const cut = cutoff.toISOString().slice(0,10);
-  const painN = history.filter(h => h.id !== '_session' && h.id !== '_hips' && h.type !== 'hips' && h.pain && h.date && h.date >= cut).length;
+  const painN = history.filter(h => h.id !== '_session' && h.id !== '_hips' && h.id !== '_300' && h.type !== 'hips' && !PWLogic.isGutcheckRecord(h) && h.pain && h.date && h.date >= cut).length;
 
   const byDate = {};
   history.forEach(h => {
     if(!h.date) return;
-    if(!byDate[h.date]) byDate[h.date] = {session:null, hips:[], lifts:[], hipsLifts:[]};
+    if(!byDate[h.date]) byDate[h.date] = {session:null, hips:[], lifts:[], hipsLifts:[], gutchecks:[], gutcheckLifts:[]};
     if(PWLogic.isLiftSession(h)) byDate[h.date].session = h;
     else if(h.id === '_hips') byDate[h.date].hips.push(h);
     else if(h.type === 'hips') byDate[h.date].hipsLifts.push(h);
+    else if(h.id === '_300' || (PWLogic.isGutcheckRecord(h) && (h.id === '_session' || h.id === '_300'))) byDate[h.date].gutchecks.push(h);
+    else if(PWLogic.isGutcheckRecord(h)) byDate[h.date].gutcheckLifts.push(h);
     else byDate[h.date].lifts.push(h);
   });
   const dates = Object.keys(byDate).sort().reverse();
@@ -1674,12 +1800,18 @@ function showHistory(){
       if(hs.mode === 'load') html += liftRowsHtml(g.hipsLifts);
       html += `</div>`;
     });
+    (g.gutchecks || []).forEach(gs => {
+      const gElapsed = gs.elapsed || fmtDuration(gs.duration||0);
+      html += `<div class="card"><b>${gs.name || '300'}</b> <span class="small">${date}${gElapsed ? ' · ' + gElapsed : ''}</span>`;
+      html += liftRowsHtml(g.gutcheckLifts);
+      html += `</div>`;
+    });
   });
 
   html += '<h2>Trends</h2>';
   const byLiftAll = {};
   history.forEach(h => {
-    if(!h.id || h.id === '_session' || h.id === '_hips' || h.type === 'hips') return;
+    if(!h.id || h.id === '_session' || h.id === '_hips' || h.id === '_300' || h.type === 'hips' || PWLogic.isGutcheckRecord(h)) return;
     if(!byLiftAll[h.id]) byLiftAll[h.id] = {name:h.name, sets:[]};
     byLiftAll[h.id].sets.push(h);
   });
