@@ -93,8 +93,8 @@
 
   var GUTCHECK_IDS = ['swing', 'goblet', 'row'];
   var GUTCHECK_TARGET = 100;
-  var GUTCHECK_SETS = 10;
-  var GUTCHECK_SET_REPS = 10;
+  var GUTCHECK_SETS = 5;
+  var GUTCHECK_SET_REPS = 20;
 
   function isGutcheckKind(kind) {
     return kind === '300' || kind === 'gutcheck';
