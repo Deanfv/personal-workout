@@ -291,5 +291,15 @@ assert.ok(html.indexOf('instagram.com') === -1);
 assert.ok(!/cdninstagram|scontent\.cdninstagram|youtube\.com\/embed/i.test(html));
 assert.ok(html.indexOf("startHips()") !== -1);
 assert.ok(html.indexOf('setHipsMode') !== -1);
+assert.ok(html.indexOf('Your photo or self-video goes here') === -1);
+assert.ok(html.indexOf('No Instagram or YouTube rip') === -1);
+assert.ok(html.indexOf('assets/hips-daily-setup.png') !== -1);
+assert.ok(html.indexOf('toggleHipsCam') !== -1);
+assert.ok(fs.existsSync(__dirname + '/../assets/hips-daily-setup.png'), 'Daily setup still must be in the repo');
+assert.ok(html.indexOf('Activate hamstrings') !== -1);
+assert.ok(html.indexOf('Activate left groin / IR') !== -1);
+assert.ok(html.indexOf('Remove the right side') !== -1);
+assert.ok(html.indexOf('Gently squeeze the roller') !== -1);
+assert.ok(html.indexOf('Pull the LEFT hip and knee down') !== -1);
 
 console.log('workout-logic tests passed');

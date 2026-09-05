@@ -98,7 +98,7 @@ button.pill{flex:1;width:auto;margin:0;background:#152a4e;color:#eef2f9;border:1
 .hips-toolbar .pills{margin:0}
 button.link.hips-pattern{display:inline-block;margin:4px 0 0;padding:6px 0;font-size:0.85rem}
 button.link.hips-pattern.on{text-decoration:underline}
-.demo-frame{min-height:120px;border:1px dashed #233a63;border-radius:10px;background:#0d1c38;display:flex;align-items:center;justify-content:center;color:#93a4c2;font-size:0.85rem;margin:8px 0;padding:12px;text-align:center}
+.demo-still{width:100%;border-radius:10px;margin:8px 0;display:block;background:#0d1c38}
 .demo-slot video{border-radius:8px;background:#000;margin-top:8px;width:100%}
 </style>
 </head>
@@ -1302,12 +1302,17 @@ function hipsModeBar(){
   <p class="small">${hipsModeLead()}</p>`;
 }
 
-function hipsDemoSlot(cues){
+const HIPS_DAILY_STILL = 'assets/hips-daily-setup.png';
+
+function hipsDemoSlot(cues, still){
   const cue = cues ? `<div class="cue"><b>Cues:</b> ${cues}</div>` : '';
+  const img = still
+    ? `<img class="demo-still" src="${still}" alt="Hips Daily setup. Supine, heels on a bench, knees about 90 degrees, foam roller between the knees.">`
+    : '';
   return `${cue}
     <div class="demo-slot">
       <p class="small">Demo</p>
-      <div class="demo-frame">Your photo or self-video goes here. No Instagram or YouTube rip.</div>
+      ${img}
       <button type="button" class="tiny secondary" onclick="toggleHipsCam(this)">Self-video</button>
       <video class="hidden" autoplay muted playsinline></video>
     </div>`;
@@ -1399,7 +1404,7 @@ function renderHipsDaily(){
           Supine. Heels on a bench or box. Knees about 90°. Foam roller or folded towel between the knees.
           Right-handed golfer: lead hip is the LEFT.
         </div>
-        ${hipsDemoSlot('Heels on the bench. Knees ~90°. Roller between the knees. Left is the lead side.')}
+        ${hipsDemoSlot('Heels on the bench. Knees ~90°. Roller between the knees. Left is the lead side.', HIPS_DAILY_STILL)}
       </div>
       <p class="small">4 rounds. 30 seconds each of the three floor steps. Then optional QL.</p>
       <button type="button" onclick="beginHipsFloor()">Start Daily</button>
@@ -1416,7 +1421,7 @@ function renderHipsDaily(){
       <p class="small">Setup reminder: supine, heels on a bench, knees ~90°, roller between the knees.</p>
       <b>${step.name}</b> <span class="small">30 sec</span>
       <div class="how"><b>How to do it</b><br>${step.how}</div>
-      ${hipsDemoSlot(step.cues)}
+      ${hipsDemoSlot(step.cues, HIPS_DAILY_STILL)}
     </div>
     <div class="timer" id="hiptimer">0:30</div>
     <button type="button" id="hipStart" onclick="runHipsStep()">Start 30s</button>
