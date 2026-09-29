@@ -104,8 +104,74 @@
     return !!(h && (isGutcheckKind(h.type) || h.id === '_300'));
   }
 
+  var PREROUND_STEPS = [
+    {
+      id: 'plank_circles',
+      name: 'Plank hip circles',
+      reps: '8 per side',
+      how: 'Plank position. One foot circles. Up, out, and around. Make a circle, not a triangle.',
+      cues: 'One foot. Up, out, and around. Circle, not a triangle.'
+    },
+    {
+      id: 'trail_reach',
+      name: 'Trail-hip load + reach',
+      reps: 'Light band or cable',
+      how: 'Light band or cable. Load into the trail hip (right for a righty). Reach across.',
+      cues: 'Big toe down. Push the foot into the ground. Rotate and reach. Light pattern, not a heavy set.'
+    },
+    {
+      id: 'push_rotate',
+      name: 'Push-and-rotate snaps',
+      reps: '6-8 per side',
+      how: 'Push into the ground and rotate. Fast. Chest turns. The arm stays connected.',
+      cues: 'Push and rotate. Chest turns. Arm stays connected. Speed, not max load.'
+    },
+    {
+      id: 'hips_pattern',
+      name: 'Hips Pattern with club',
+      reps: 'Optional',
+      optional: true,
+      hipsMode: 'pattern'
+    }
+  ];
+
+  var HIPS_PATTERN = {
+    title: 'Left hip clears first',
+    meta: '8–10 slow reps · ~5 min',
+    how: 'Stand tall. Set arm structure with a club. Hinge. LEFT hip clears FIRST, THEN the torso shifts toward the target. Trail sidebend is the result, not the start. Do not compress the spine from the top down.',
+    cues: 'Left hip first. Then torso toward target. Trail sidebend follows. Spine long.'
+  };
+
+  function isPreroundRecord(h) {
+    return !!(h && (h.type === 'preround' || h.id === '_preround'));
+  }
+
+  function preroundHistoryLabel() {
+    return 'Pre-round';
+  }
+
+  function preroundSessionRecord(opts) {
+    opts = opts || {};
+    return {
+      date: opts.date || '',
+      id: '_preround',
+      type: 'preround',
+      name: preroundHistoryLabel(),
+      pattern: !!opts.pattern,
+      duration: opts.duration || 0,
+      elapsed: opts.elapsed || ''
+    };
+  }
+
+  function preroundAdvance(step, nSteps) {
+    nSteps = nSteps || PREROUND_STEPS.length;
+    var next = (step || 0) + 1;
+    if (next >= nSteps) return {done: true, step: Math.max(0, nSteps - 1)};
+    return {done: false, step: next};
+  }
+
   function isLiftSession(h) {
-    return !!(h && h.id === '_session' && !isHipsRecord(h) && !isGutcheckRecord(h));
+    return !!(h && h.id === '_session' && !isHipsRecord(h) && !isGutcheckRecord(h) && !isPreroundRecord(h));
   }
 
   function suggestedWhich(lastLabel, hasLast) {
@@ -237,6 +303,12 @@
     GUTCHECK_SET_REPS: GUTCHECK_SET_REPS,
     isGutcheckKind: isGutcheckKind,
     isGutcheckRecord: isGutcheckRecord,
+    PREROUND_STEPS: PREROUND_STEPS,
+    HIPS_PATTERN: HIPS_PATTERN,
+    isPreroundRecord: isPreroundRecord,
+    preroundHistoryLabel: preroundHistoryLabel,
+    preroundSessionRecord: preroundSessionRecord,
+    preroundAdvance: preroundAdvance,
     isLiftSession: isLiftSession,
     suggestedWhich: suggestedWhich,
     gutcheckHistoryLabel: gutcheckHistoryLabel,

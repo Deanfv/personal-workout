@@ -189,6 +189,14 @@ button.link.hips-pattern.on{text-decoration:underline}
         <p class="small">Not the day before you play. RPE 6–7. Sets of 20.</p>
         <button type="button" class="secondary card-start" onclick="start300()">Start 300</button>
       </div>
+      <div class="card" id="cardPreround" data-session="preround">
+        <div class="row-between">
+          <h2>Pre-round</h2>
+          <span class="tag-mins">5 min</span>
+        </div>
+        <p class="small">About 5 minutes. Hips on, then go play.</p>
+        <button type="button" class="secondary card-start" onclick="startPreround()">Start Pre-round</button>
+      </div>
       <p class="eyebrow">Stretch</p>
       <div class="pills">
         <button type="button" class="pill" onclick="startWarmup('short')">5 min</button>
@@ -214,7 +222,7 @@ button.link.hips-pattern.on{text-decoration:underline}
   <button type="button" onclick="hidePavelNote()">Got it</button>
 </div>
 
-<script src="workout-logic.js?v=20260903b"></script>
+<script src="workout-logic.js?v=20260929a"></script>
 <script>
 const EXERCISES = [
   {id:'goblet', name:'Goblet Squat', cat:'squat',
@@ -499,6 +507,14 @@ function paintHome(){
     const btn = card300.querySelector('.card-start');
     if(btn) btn.classList.add('secondary');
   }
+  const cardPre = document.getElementById('cardPreround');
+  if(cardPre){
+    cardPre.classList.remove('suggested');
+    const mark = cardPre.querySelector('.suggest-mark');
+    if(mark) mark.classList.add('hidden');
+    const btn = cardPre.querySelector('.card-start');
+    if(btn) btn.classList.add('secondary');
+  }
 }
 
 function skipSelfScreen(){
@@ -779,6 +795,7 @@ let hipsMode = 'daily';
 let hipsPhase = 'setup';
 let hipsRound = 1;
 let hipsStep = 0;
+let preroundStep = 0;
 
 const HIPS_DAILY = [
   {id:'hamstrings', name:'Activate hamstrings', secs:30,
@@ -888,12 +905,12 @@ function start300(){
 function startLast(){
   let ids = [];
   try { ids = JSON.parse(localStorage.getItem('pw_last_ids') || '[]'); } catch(e){ ids = []; }
-  if(!ids.length && currentWorkout.length && !isGutcheckSession() && sessionKind !== 'hips') ids = currentWorkout.map(e => e.id);
+  if(!ids.length && currentWorkout.length && !isGutcheckSession() && sessionKind !== 'hips' && sessionKind !== 'preround') ids = currentWorkout.map(e => e.id);
   if(!ids.length){
     const prev = [];
     history.forEach(h => {
-      if(!h.id || h.id === '_session' || h.id === '_hips' || h.id === '_300') return;
-      if(h.type === 'hips' || PWLogic.isGutcheckRecord(h)) return;
+      if(!h.id || h.id === '_session' || h.id === '_hips' || h.id === '_300' || h.id === '_preround') return;
+      if(h.type === 'hips' || PWLogic.isGutcheckRecord(h) || PWLogic.isPreroundRecord(h)) return;
       if(!prev.includes(h.id)) prev.push(h.id);
     });
     ids = prev.slice(0,8);
@@ -903,7 +920,7 @@ function startLast(){
     return;
   }
   const label = localStorage.getItem('pw_last_label') || 'Same as last';
-  if(/^Hips/.test(label) || label === '300' || /^300/.test(label) || /gutcheck/i.test(label)){
+  if(/^Hips/.test(label) || label === '300' || /^300/.test(label) || /gutcheck/i.test(label) || label === 'Pre-round' || /^Pre-round/.test(label)){
     alert('No last workout yet. Start A, B, or C first.');
     return;
   }
@@ -1155,6 +1172,7 @@ function abandonSession(){
   sessionKind = 'lift';
   hipsMode = 'daily';
   hipsPhase = 'setup';
+  preroundStep = 0;
   currentWorkout = [];
   document.getElementById('content').innerHTML = '';
   showHome();
@@ -1162,10 +1180,11 @@ function abandonSession(){
 
 function lastDaySets(ex){
   const rows = history.filter(h => {
-    if(!h || h.id !== ex.id || h.id === '_session' || h.id === '_hips' || h.id === '_300' || !h.date) return false;
+    if(!h || h.id !== ex.id || h.id === '_session' || h.id === '_hips' || h.id === '_300' || h.id === '_preround' || !h.date) return false;
     if(sessionKind === 'hips') return h.type === 'hips';
     if(isGutcheckSession()) return PWLogic.isGutcheckRecord(h);
-    return h.type !== 'hips' && !PWLogic.isGutcheckRecord(h);
+    if(sessionKind === 'preround') return PWLogic.isPreroundRecord(h);
+    return h.type !== 'hips' && !PWLogic.isGutcheckRecord(h) && !PWLogic.isPreroundRecord(h);
   });
   if(!rows.length) return [];
   let newest = rows[0].date;
@@ -1448,20 +1467,16 @@ function nextHipsFloorStep(){
 }
 
 function renderHipsPattern(){
+  const pat = PWLogic.HIPS_PATTERN;
   const c = document.getElementById('content');
   c.innerHTML = `
     ${sessionClockHtml()}
     <h2>Hips · Pattern</h2>
     ${hipsModeBar()}
     <div class="card">
-      <b>Left hip clears first</b> <span class="small">8–10 slow reps · ~5 min</span>
-      <div class="how"><b>How to do it</b><br>
-        Stand tall. Set arm structure with a club. Hinge.
-        LEFT hip clears FIRST, THEN the torso shifts toward the target.
-        Trail sidebend is the result, not the start.
-        Do not compress the spine from the top down.
-      </div>
-      ${hipsDemoSlot('Left hip first. Then torso toward target. Trail sidebend follows. Spine long.')}
+      <b>${pat.title}</b> <span class="small">${pat.meta}</span>
+      <div class="how"><b>How to do it</b><br>${pat.how}</div>
+      ${hipsDemoSlot(pat.cues)}
     </div>
     <button type="button" onclick="logHipsMode('pattern')">Log Pattern</button>
   `;
@@ -1501,6 +1516,91 @@ function showGutcheckLogged(dur){
     <div class="card">
       <h2>300</h2>
       <p>Logged. Gut check — not the next Suggested session.</p>
+      <p class="small">${dur ? ('Time: ' + dur) : ''}</p>
+    </div>`;
+}
+
+function startPreround(){
+  pendingAfterWarmup = null;
+  sessionKind = 'preround';
+  preroundStep = 0;
+  currentWorkout = [];
+  hideHome();
+  startWorkoutClock();
+  renderPreround();
+}
+
+function preroundView(step){
+  if(step && step.hipsMode === 'pattern'){
+    const pat = PWLogic.HIPS_PATTERN;
+    return {
+      name: step.name,
+      reps: step.reps || 'Optional',
+      how: pat.how,
+      cues: pat.cues,
+      note: 'Same pattern as Hips. Club in hand. Skip if you are ready to play.'
+    };
+  }
+  return {name: step.name, reps: step.reps, how: step.how, cues: step.cues, note: ''};
+}
+
+function renderPreround(){
+  const steps = PWLogic.PREROUND_STEPS;
+  const step = steps[preroundStep] || steps[0];
+  const view = preroundView(step);
+  const n = preroundStep + 1;
+  const note = view.note ? `<p class="small">${view.note}</p>` : '';
+  const actions = step.optional
+    ? `<button type="button" class="secondary" onclick="logPreround(false)">Skip pattern</button>
+       <button type="button" onclick="logPreround(true)">I did the pattern</button>`
+    : `<button type="button" onclick="nextPreroundStep()">Next</button>
+       <button type="button" class="secondary" onclick="nextPreroundStep()">Skip / next</button>`;
+  document.getElementById('content').innerHTML = `
+    ${sessionClockHtml()}
+    <h2>Pre-round</h2>
+    <p class="small">About 5 minutes. Hips on, then go play.</p>
+    <p>Step ${n} of ${steps.length}</p>
+    <div class="card">
+      <b>${view.name}</b> <span class="small">${view.reps}</span>
+      ${note}
+      <div class="how"><b>How to do it</b><br>${view.how}</div>
+      ${hipsDemoSlot(view.cues)}
+    </div>
+    ${actions}
+  `;
+}
+
+function nextPreroundStep(){
+  clearWarmupTimers();
+  const next = PWLogic.preroundAdvance(preroundStep, PWLogic.PREROUND_STEPS.length);
+  if(next.done){
+    logPreround(false);
+    return;
+  }
+  preroundStep = next.step;
+  renderPreround();
+}
+
+function logPreround(didPattern){
+  sessionKind = 'preround';
+  const date = new Date().toISOString().slice(0,10);
+  const secs = stopWorkoutClock();
+  const dur = fmtDuration(secs);
+  history.push(PWLogic.preroundSessionRecord({date:date, duration:secs, elapsed:dur, pattern:!!didPattern}));
+  try { localStorage.setItem('pw_history', JSON.stringify(history)); } catch(e){}
+  showPreroundLogged(dur);
+}
+
+function showPreroundLogged(dur){
+  stopCam();
+  currentWorkout = [];
+  sessionKind = 'lift';
+  preroundStep = 0;
+  showHome();
+  document.getElementById('content').innerHTML = `
+    <div class="card">
+      <h2>Pre-round</h2>
+      <p>Logged. Go play.</p>
       <p class="small">${dur ? ('Time: ' + dur) : ''}</p>
     </div>`;
 }
@@ -1709,7 +1809,7 @@ function saveSession(){
     });
   }
   history.push({date, id:'_session', name:'Full-body session', duration:secs, elapsed:dur});
-  const recent = history.filter(h => h.id !== '_session' && h.id !== '_hips' && h.id !== '_300' && h.type !== 'hips' && !PWLogic.isGutcheckRecord(h)).slice(-12);
+  const recent = history.filter(h => h.id !== '_session' && h.id !== '_hips' && h.id !== '_300' && h.id !== '_preround' && h.type !== 'hips' && !PWLogic.isGutcheckRecord(h) && !PWLogic.isPreroundRecord(h)).slice(-12);
   const high = recent.filter(h => h.rpe>=8 || h.pain).length;
   localStorage.setItem('pw_history', JSON.stringify(history));
   let msg;
@@ -1737,17 +1837,18 @@ function showHistory(){
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 30);
   const cut = cutoff.toISOString().slice(0,10);
-  const painN = history.filter(h => h.id !== '_session' && h.id !== '_hips' && h.id !== '_300' && h.type !== 'hips' && !PWLogic.isGutcheckRecord(h) && h.pain && h.date && h.date >= cut).length;
+  const painN = history.filter(h => h.id !== '_session' && h.id !== '_hips' && h.id !== '_300' && h.id !== '_preround' && h.type !== 'hips' && !PWLogic.isGutcheckRecord(h) && !PWLogic.isPreroundRecord(h) && h.pain && h.date && h.date >= cut).length;
 
   const byDate = {};
   history.forEach(h => {
     if(!h.date) return;
-    if(!byDate[h.date]) byDate[h.date] = {session:null, hips:[], lifts:[], hipsLifts:[], gutchecks:[], gutcheckLifts:[]};
+    if(!byDate[h.date]) byDate[h.date] = {session:null, hips:[], lifts:[], hipsLifts:[], gutchecks:[], gutcheckLifts:[], prerounds:[]};
     if(PWLogic.isLiftSession(h)) byDate[h.date].session = h;
     else if(h.id === '_hips') byDate[h.date].hips.push(h);
     else if(h.type === 'hips') byDate[h.date].hipsLifts.push(h);
     else if(h.id === '_300' || (PWLogic.isGutcheckRecord(h) && (h.id === '_session' || h.id === '_300'))) byDate[h.date].gutchecks.push(h);
     else if(PWLogic.isGutcheckRecord(h)) byDate[h.date].gutcheckLifts.push(h);
+    else if(PWLogic.isPreroundRecord(h)) byDate[h.date].prerounds.push(h);
     else byDate[h.date].lifts.push(h);
   });
   const dates = Object.keys(byDate).sort().reverse();
@@ -1809,12 +1910,18 @@ function showHistory(){
       html += liftRowsHtml(g.gutcheckLifts);
       html += `</div>`;
     });
+    (g.prerounds || []).forEach(ps => {
+      const pElapsed = ps.elapsed || fmtDuration(ps.duration||0);
+      html += `<div class="card"><b>${ps.name || 'Pre-round'}</b> <span class="small">${date}${pElapsed ? ' · ' + pElapsed : ''}</span>`;
+      if(ps.pattern) html += `<p class="small">Included Hips Pattern.</p>`;
+      html += `</div>`;
+    });
   });
 
   html += '<h2>Trends</h2>';
   const byLiftAll = {};
   history.forEach(h => {
-    if(!h.id || h.id === '_session' || h.id === '_hips' || h.id === '_300' || h.type === 'hips' || PWLogic.isGutcheckRecord(h)) return;
+    if(!h.id || h.id === '_session' || h.id === '_hips' || h.id === '_300' || h.id === '_preround' || h.type === 'hips' || PWLogic.isGutcheckRecord(h) || PWLogic.isPreroundRecord(h)) return;
     if(!byLiftAll[h.id]) byLiftAll[h.id] = {name:h.name, sets:[]};
     byLiftAll[h.id].sets.push(h);
   });
